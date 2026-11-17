@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipForge — vidéo longue → clips viraux</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=TikTok+Sans:wght@600;700&display=swap">
+<style>
+:root{--bg:#0d0d10;--p:#16161b;--p2:#1e1e25;--b:#2a2a33;--t:#ececf1;--m:#8d8d9a;--a:#ffe100;--r:#ff3b5c;--g:#2fd27a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:14px/1.45 Inter,system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--p2);border:1px solid var(--b);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover:not(:disabled){border-color:#4a4a55}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:var(--a);color:#111;border-color:var(--a);font-weight:700}
+button.red{background:var(--r);border-color:var(--r);color:#fff;font-weight:700}
+button.sm{padding:4px 8px;font-size:12px}
+input[type=text],input[type=number],select,textarea{background:#0f0f13;border:1px solid var(--b);border-radius:8px;padding:7px 9px;width:100%}
+textarea{resize:vertical;min-height:90px}
+input[type=range]{width:100%;accent-color:var(--a)}
+label{display:block;font-size:12px;color:var(--m);margin:10px 0 4px}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font:900 18px Montserrat,Inter,sans-serif;margin:0;letter-spacing:.5px}
+header h1 span{color:var(--a)}
+header .sp{flex:1}
+.muted{color:var(--m)}
+.wrap{padding:18px;max-width:1500px;margin:0 auto}
+.card{background:var(--p);border:1px solid var(--b);border-radius:12px;padding:16px}
+#drop{border:2px dashed var(--b);border-radius:12px;padding:38px;text-align:center;cursor:pointer}
+#drop.over{border-color:var(--a)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.step{padding:5px 10px;border-radius:99px;background:var(--p2);font-size:12px;color:var(--m);border:1px solid var(--b)}
+.step.on{color:#111;background:var(--a);border-color:var(--a);font-weight:700}
+.step.done{color:var(--g);border-color:#24553b}
+.bar{height:8px;background:var(--p2);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--a);transition:width .2s}
+#editor{display:none;grid-template-columns:300px minmax(320px,420px) 1fr;gap:16px;align-items:start}
+#clips .ci{padding:10px;border:1px solid var(--b);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--p2)}
+#clips .ci.sel{border-color:var(--a)}
+#clips .ci b{display:block;font-size:13px}
+#clips .ci small{color:var(--m)}
+.badge{display:inline-block;font-size:11px;padding:1px 6px;border-radius:99px;background:#26262e;margin-right:4px}
+.badge.ok{background:#173b29;color:var(--g)}
+#pv{width:100%;aspect-ratio:9/16;background:#000;border-radius:12px;display:block}
+.tr{max-height:260px;overflow:auto;background:#0f0f13;border:1px solid var(--b);border-radius:10px;padding:10px;line-height:1.9}
+.tr span{cursor:pointer;border-radius:4px;padding:1px 1px}
+.tr span:hover{background:#2b2b35}
+.tr span.in{background:#3a3410}
+.tr .ts{color:var(--m);font-size:11px;margin-right:4px;cursor:default}
+#log{font-size:12px;color:var(--m);white-space:pre-wrap;max-height:120px;overflow:auto;margin-top:8px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#22222b;border:1px solid var(--b);padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw}
+.sec{font:800 12px Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--m);margin:16px 0 6px}
+.proj{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--b);border-radius:8px;margin-top:6px;background:var(--p2)}
+.ideas button{display:block;width:100%;text-align:left;margin-top:5px}
+.tag{font-size:12px;padding:3px 8px;border-radius:99px;border:1px solid var(--b);background:#0f0f13;cursor:pointer;user-select:none}
+.tag.on{background:var(--a);color:#111;border-color:var(--a);font-weight:700}
+@media (max-width:1100px){#editor{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>CLIP<span>FORGE</span></h1>
+  <span class="muted" id="hdrInfo">vidéo longue → clips verticaux sous-titrés</span>
+  <span class="sp"></span>
+  <button id="btnNew" class="sm" style="display:none">Nouvelle vidéo</button>
+  <button id="btnExportProj" class="sm" style="display:none">Sauver projet (.json)</button>
+</header>
+
+<div class="wrap">
+  <!-- ÉTAPE 1 -->
+  <div id="start" class="card">
+    <div id="drop">
+      <div style="font-size:34px">🎬</div>
+      <b>Dépose ta vidéo ici</b> <span class="muted">ou clique pour choisir (MP4, MOV…)</span><div id="linkHint" class="muted" style="font-size:12px;margin-top:8px">Lien YouTube / Twitch ? Double-clique sur « ClipForge Lien » sur ton Bureau, colle le lien, puis glisse ici le MP4 du dossier Vidéos › ClipForge.</div>
+      <input id="file" type="file" accept="video/*" hidden>
+    </div>
+    <div id="linkBox" style="display:none;margin-top:14px">
+      <label style="margin-top:0">🔗 Ou colle un lien YouTube / Twitch</label>
+      <div class="row" style="flex-wrap:nowrap"><input id="linkUrl" type="text" placeholder="https://www.youtube.com/watch?v=…"><button id="btnLink" class="pri" style="white-space:nowrap">Importer</button></div>
+      <div class="bar" id="linkBar" style="display:none;margin-top:8px"><i></i></div>
+      <div id="linkInfo" class="muted" style="font-size:12px;margin-top:4px">N'importe que des vidéos dont tu as les droits ou l'autorisation du créateur.</div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div style="width:170px"><label>Langue parlée</label>
+        <select id="lang"><option value="french" selected>Français</option><option value="english">Anglais</option><option value="spanish">Espagnol</option><option value="arabic">Arabe</option><option value="portuguese">Portugais</option><option value="italian">Italien</option><option value="german">Allemand</option></select></div>
+      <div style="width:120px"><label>Nombre de clips</label><input id="nClips" type="number" min="1" max="20" value="7"></div>
+      <div style="width:200px"><label>Durée visée par clip</label>
+        <select id="dur"><option value="15-35">Court (15–35 s)</option><option value="25-60" selected>Moyen (25–60 s)</option><option value="45-90">Long (45–90 s)</option></select></div>
+      <div style="width:230px"><label>Gameplay en dessous</label>
+        <select id="gpDef"><option value="none">Aucun</option><option value="runner" selected>🏃 Runner (jeu original)</option><option value="dash">🟨 Parkour néon (jeu original)</option><option value="tunnel">🌀 Tunnel néon (jeu original)</option><option value="upload">📁 Ma vidéo de gameplay</option></select></div>
+      <div style="flex:1"></div>
+      <button id="btnGo" class="pri" disabled style="margin-top:22px">Générer les clips</button>
+    </div>
+    <details id="ytBox" style="margin-top:14px">
+      <summary style="cursor:pointer"><b>⚡ Transcription YouTube (facultatif)</b> <span class="muted">— colle-la pour sauter la transcription automatique</span></summary>
+      <div class="muted" style="font-size:12px;margin:8px 0">Sur YouTube : sous la vidéo, « … Plus » → « Afficher la transcription » → sélectionne tout le texte du panneau et copie-le ici (avec les horodatages). Formats SRT/VTT acceptés aussi. Laisse vide pour la transcription automatique.</div>
+      <textarea id="ytText" placeholder="0:00&#10;salut tout le monde&#10;0:04&#10;aujourd'hui je vais vous raconter..." style="min-height:120px"></textarea>
+      <div id="ytInfo" class="muted" style="font-size:12px;margin-top:4px"></div>
+    </details>
+    <label style="display:flex;gap:8px;align-items:center;color:var(--t);margin-top:12px"><input id="optAlign" type="checkbox" checked style="width:auto"> 🎧 Caler et vérifier les sous-titres sur l'audio (recommandé — corrige les erreurs de la transcription YouTube)</label>
+    <div id="fileInfo" class="muted" style="margin-top:8px"></div>
+    <div id="saved"></div>
+    <div class="row" style="margin-top:10px"><button id="btnImportProj" class="sm">Importer un projet .json</button><input id="projFile" type="file" accept=".json,application/json" hidden></div>
+  </div>
+
+  <!-- PROGRESSION -->
+  <div id="prog" class="card" style="display:none;margin-top:14px">
+    <div class="steps" id="steps"></div>
+    <div class="bar"><i id="barI"></i></div>
+    <div class="row" style="margin-top:8px"><span id="progTxt"></span><span class="sp" style="flex:1"></span><span id="eta" class="muted"></span></div>
+    <div id="log"></div>
+  </div>
+
+  <!-- ÉDITEUR -->
+  <div id="editor" style="margin-top:14px">
+    <div>
+      <div class="row" style="justify-content:space-between"><div class="sec" style="margin:0">Clips</div><button id="btnAdd" class="sm">+ Nouveau clip</button></div>
+      <div id="clips" style="margin-top:8px"></div>
+      <div class="sec">Export</div>
+      <button id="btnRenderAll" class="pri" style="width:100%">Rendre tous les clips</button>
+      <button id="btnZip" style="width:100%;margin-top:6px" disabled>Télécharger tout (.zip)</button><div class="muted" style="font-size:12px;margin-top:4px">Le zip contient les clips rendus, toutes les couvertures et un fichier texte avec légendes + hashtags.</div>
+      <label style="display:flex;gap:8px;align-items:center;color:var(--t);margin-top:10px"><input id="optCovFirst" type="checkbox" style="width:auto"> Mettre la couverture en 1re image du clip (0,3 s)</label>
+      <div class="muted" style="font-size:12px">Utile sur TikTok mobile : tu pourras la choisir comme couverture parmi les images de la vidéo.</div>
+      <div class="muted" style="font-size:12px;margin-top:6px">Le rendu se fait en temps réel (un clip de 40 s = 40 s). Garde cet onglet visible pendant le rendu.</div>
+    </div>
+
+    <div>
+      <canvas id="pv" width="540" height="960"></canvas>
+      <div class="row" style="margin-top:8px">
+        <button id="btnPlay">▶︎ Lire</button>
+        <input id="scrub" type="range" min="0" max="1000" value="0" style="flex:1">
+        <span id="tlab" class="muted" style="font-variant-numeric:tabular-nums">0.0s</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRender" class="red">Rendre ce clip</button>
+        <button id="btnDl" disabled>⬇︎ Télécharger MP4</button>
+        <span id="rstat" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Titre (reste affiché tout le clip)</label>
+      <div class="row" style="flex-wrap:nowrap"><input id="cTitle" type="text"><button id="btnIdeas" class="sm" title="Demander 3 titres à Claude">✨ Idées</button></div>
+      <div id="ideas" class="ideas"></div>
+      <div class="grid2">
+        <div><label>Début (s)</label><div class="row" style="flex-wrap:nowrap"><button class="sm" data-adj="s,-0.5">−</button><input id="cStart" type="number" step="0.1"><button class="sm" data-adj="s,0.5">+</button></div></div>
+        <div><label>Fin (s)</label><div class="row" style="flex-wrap:nowrap"><button class="sm" data-adj="e,-0.5">−</button><input id="cEnd" type="number" step="0.1"><button class="sm" data-adj="e,0.5">+</button></div></div>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:4px">Astuce : dans la transcription en bas, clic = début, Maj+clic = fin.</div>
+      <div class="grid2">
+        <div><label>Cadrage</label><select id="cMode"><option value="crop">Plein écran (recadré)</option><option value="fit">Vidéo entière + fond flou</option></select></div>
+        <div><label>Zoom</label><input id="cZoom" type="range" min="1" max="2.5" step="0.01"></div>
+        <div><label>Position horizontale</label><input id="cX" type="range" min="0" max="1" step="0.01"></div>
+        <div><label>Position verticale</label><input id="cY" type="range" min="0" max="1" step="0.01"></div>
+        <div><label>Hauteur du titre</label><input id="cTY" type="range" min="0.06" max="0.6" step="0.005"></div>
+        <div><label>Hauteur des sous-titres</label><input id="cSY" type="range" min="0.4" max="0.92" step="0.005"></div>
+      </div>
+      <div class="sec">Gameplay en dessous</div>
+      <div class="grid2">
+        <div><label style="margin-top:0">Fond de gameplay</label><select id="cGp"><option value="none">Aucun</option><option value="runner">🏃 Runner (jeu original)</option><option value="dash">🟨 Parkour néon (jeu original)</option><option value="tunnel">🌀 Tunnel néon (jeu original)</option><option value="upload">📁 Ma vidéo de gameplay</option></select></div>
+        <div><label style="margin-top:0">Hauteur de la vidéo du haut</label><input id="cGpR" type="range" min="0.4" max="0.75" step="0.01"></div>
+      </div>
+      <div class="row" style="margin-top:6px"><button id="btnGpUp" class="sm">📁 Importer ma vidéo de gameplay</button><span id="gpName" class="muted" style="font-size:12px"></span><span style="flex:1"></span><button id="btnGpAll" class="sm">Appliquer à tous les clips</button></div>
+      <input id="gpFile" type="file" accept="video/*" hidden>
+      <label>Sous-titres (texte du clip — corrige les fautes ici)</label>
+      <textarea id="cText"></textarea>
+      <div class="row" style="margin-top:6px"><button id="btnApplyText" class="sm">Appliquer le texte</button><button id="btnFix" class="sm">✨ Corriger avec Claude</button><button id="btnAlign" class="sm" title="Retranscrit l'audio de ce clip mot à mot puis fait vérifier le texte et le titre">🎧 Recaler sur l'audio</button><span class="sp" style="flex:1"></span><button id="btnDel" class="sm" style="color:var(--r)">Supprimer le clip</button></div>
+      <div class="sec">Couverture (miniature)</div>
+      <div class="row" style="align-items:flex-start;flex-wrap:nowrap">
+        <canvas id="cov" width="270" height="480" style="width:135px;height:240px;border-radius:8px;background:#000;flex:none"></canvas>
+        <div style="flex:1">
+          <label style="margin-top:0">Texte de la couverture</label>
+          <textarea id="cCovT" style="min-height:60px" placeholder="(vide = le titre du clip)"></textarea>
+          <label>Image de fond</label><input id="cCovPos" type="range" min="0" max="1" step="0.01">
+          <button id="btnCovDl" class="sm" style="margin-top:8px">⬇︎ Télécharger la couverture (JPG)</button>
+        </div>
+      </div>
+      <div class="sec">Publication</div>
+      <label style="margin-top:0">Légende</label>
+      <textarea id="cCaption" style="min-height:60px"></textarea>
+      <label>Hashtags <span class="muted">(clic = sélectionner / retirer · jaune = sélectionné, dans l'ordre d'importance)</span></label>
+      <div id="tags" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+      <div class="row" style="margin-top:6px;flex-wrap:nowrap"><input id="tagAdd" type="text" placeholder="+ ajouter un hashtag (Entrée)"><button id="btnTagAll" class="sm">Tout</button><button id="btnTagNone" class="sm">Aucun</button></div>
+      <div class="row" style="margin-top:8px"><button id="btnCaption" class="sm">✨ Générer légende + hashtags</button><button id="btnCopyTT" class="sm pri">Copier pour TikTok</button><button id="btnCopyIG" class="sm">Copier pour Insta (5 max)</button></div>
+    </div>
+  </div>
+
+  <div id="trWrap" class="card" style="display:none;margin-top:16px">
+    <div class="row" style="justify-content:space-between"><div class="sec" style="margin:0">Transcription complète</div><span class="muted" style="font-size:12px">surligné = clip sélectionné</span></div>
+    <div id="tr" class="tr" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<video id="pvVid" playsinline preload="auto" style="display:none"></video>
+<video id="rvVid" playsinline preload="auto" style="display:none"></video>
+<video id="cvVid" playsinline preload="auto" muted style="display:none"></video>
+
+<script>
+/* ============ utilitaires ============ */
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = t => { t = Math.max(0, t || 0); const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + s.toFixed(1).padStart(4, '0'); };
+let toastT;
+function toast(msg, ms = 3500) { let el = $('.toast'); if (!el) { el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); } el.textContent = msg; el.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => el.style.display = 'none', ms); }
+function log(m) { const el = $('#log'); el.textContent += m + '\n'; el.scrollTop = 1e9; console.log('[clipforge]', m); }
+const BASE = new URL('./', location.href).href;
+
+/* ============ capacités Claude (facultatives) ============ */
+let capSample = null, capDl = null;
+const SERVER = { on: false, claude: false, download: false };
+(async () => {
+  try { if (window.claude && claude.use) { capSample = await claude.use('sample'); } } catch (e) { capSample = null; }
+  try { if (window.claude && claude.use) { capDl = await claude.use('downloads'); } } catch (e) { capDl = null; }
+  updateCapsUI();
+})();
+function updateCapsUI() {
+  for (const id of ['#btnIdeas', '#btnFix']) $(id).style.display = hasClaude() ? '' : 'none';
+}
+/* mode « site hébergé » : un serveur ClipForge répond sur /api */
+function hasClaude() { return !!capSample || SERVER.claude; }
+(async () => {
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch('./api/health', { signal: ctl.signal }); if (!r.ok) return;
+    const j = await r.json(); if (!j || !j.clipforge) return;
+    Object.assign(SERVER, { on: true, claude: !!j.claude, download: !!j.download, maxMin: j.maxMinutes });
+    $('#linkBox').style.display = SERVER.download ? '' : 'none'; $('#linkHint').style.display = 'none';
+    updateCapsUI();
+  } catch (e) { }
+})();
+async function askClaude(prompt) {
+  if (capSample) return await capSample.json(prompt, { modelTier: 'default' });
+  if (SERVER.claude) {
+    const r = await _fetch('./api/claude', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ prompt }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code || r.status; throw e; }
+    return j.result;
+  }
+  throw new Error('Claude indisponible ici');
+}
+
+/* ============ état ============ */
+const S = { file: null, fileKey: null, videoURL: null, dur: 0, vw: 1920, vh: 1080, words: [], clips: [], sel: -1, lang: 'french' };
+let rendered = {}; // clipId -> {blob, url, ext}
+const uid = () => Math.random().toString(36).slice(2, 9);
+const STYLE = { yellow: '#FFE500' };
+const GENERIC_TITLES = ['😱 Il n\'aurait jamais dû dire ça…', '🔥 Personne ne s\'attendait à ça 😳', '💀 La fin va te choquer…', '😭 Il raconte enfin la vérité', '🚨 Ce moment a tout changé 😱', '😳 Regarde jusqu\'à la fin…', '💔 Il ne s\'en remet toujours pas'];
+
+/* ============ IndexedDB (reprise de projet) ============ */
+let dbp = null;
+function idb() {
+  if (dbp) return dbp;
+  dbp = new Promise((res) => {
+    try {
+      const r = indexedDB.open('clipforge', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('projects'); r.result.createObjectStore('videos'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+  return dbp;
+}
+async function idbOp(store, mode, fn) {
+  const db = await idb(); if (!db) return null;
+  return new Promise((res) => {
+    try { const tx = db.transaction(store, mode); const st = tx.objectStore(store); const rq = fn(st); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => res(null); tx.onabort = () => res(null); } catch (e) { res(null); }
+  });
+}
+let saveT;
+function saveProject() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    if (!S.fileKey) return;
+    idbOp('projects', 'readwrite', st => st.put(projJSON(), S.fileKey));
+  }, 400);
+}
+function projJSON() { return { v: 1, name: S.file ? S.file.name : S.name, fileKey: S.fileKey, dur: S.dur, lang: S.lang, words: S.words, clips: S.clips, updated: Date.now() }; }
+async function listSaved() {
+  const db = await idb(); const box = $('#saved'); box.innerHTML = '';
+  if (!db) return;
+  const keys = await idbOp('projects', 'readonly', st => st.getAllKeys()) || [];
+  const vals = await idbOp('projects', 'readonly', st => st.getAll()) || [];
+  if (!vals.length) return;
+  box.innerHTML = '<div class="sec">Reprendre un projet</div>';
+  vals.sort((a, b) => b.updated - a.updated).forEach(p => {
+    const d = document.createElement('div'); d.className = 'proj';
+    d.innerHTML = `<div><b></b><br><small class="muted">${p.clips.length} clips · ${new Date(p.updated).toLocaleString('fr-FR')}</small></div><div class="row"><button class="sm pri">Reprendre</button><button class="sm">✕</button></div>`;
+    d.querySelector('b').textContent = p.name;
+    const [bOpen, bDel] = d.querySelectorAll('button');
+    bOpen.onclick = () => resumeProject(p);
+    bDel.onclick = async () => { await idbOp('projects', 'readwrite', st => st.delete(p.fileKey)); await idbOp('videos', 'readwrite', st => st.delete(p.fileKey)); listSaved(); };
+    box.appendChild(d);
+  });
+}
+let pendingProject = null;
+async function resumeProject(p) {
+  const blob = await idbOp('videos', 'readonly', st => st.get(p.fileKey));
+  if (blob) {
+    const f = new File([blob], p.name, { type: blob.type || 'video/mp4' });
+    await loadVideoFile(f, p.fileKey);
+    applyProject(p);
+  } else {
+    pendingProject = p;
+    toast('Re-sélectionne la vidéo « ' + p.name + ' » pour reprendre ce projet.', 6000);
+    $('#file').click();
+  }
+}
+function applyProject(p) {
+  S.words = p.words || []; S.clips = p.clips || []; S.lang = p.lang || 'french';
+  S.clips.forEach(c => { c.id = c.id || uid(); });
+  rendered = {};
+  openEditor();
+}
+
+/* ============ chargement vidéo ============ */
+const drop = $('#drop');
+drop.onclick = () => $('#file').click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) onPickFile(f); };
+$('#file').onchange = e => { const f = e.target.files[0]; if (f) onPickFile(f); e.target.value = ''; };
+
+async function onPickFile(f) {
+  const key = f.name + '|' + f.size;
+  await loadVideoFile(f, key);
+  if (pendingProject) { const p = pendingProject; pendingProject = null; applyProject(p); idbOp('videos', 'readwrite', st => st.put(f, key)); return; }
+  const existing = await idbOp('projects', 'readonly', st => st.get(key));
+  if (existing && existing.clips && existing.clips.length) {
+    $('#fileInfo').innerHTML = '';
+    const b = document.createElement('button'); b.className = 'sm pri'; b.textContent = 'Un projet existe pour cette vidéo — le reprendre';
+    b.onclick = () => applyProject(existing);
+    $('#fileInfo').append(`${f.name} — ${fmt(S.dur)} — ${S.vw}×${S.vh}  `, b);
+  }
+  idbOp('videos', 'readwrite', st => st.put(f, key));
+}
+function loadVideoFile(f, key) {
+  return new Promise((res, rej) => {
+    if (S.videoURL) URL.revokeObjectURL(S.videoURL);
+    S.file = f; S.fileKey = key; S.name = f.name;
+    S.videoURL = URL.createObjectURL(f);
+    const v = $('#pvVid');
+    v.onloadedmetadata = () => {
+      S.dur = v.duration; S.vw = v.videoWidth || 1920; S.vh = v.videoHeight || 1080;
+      $('#fileInfo').textContent = `${f.name} — ${fmt(S.dur)} — ${S.vw}×${S.vh}`;
+      $('#btnGo').disabled = false;
+      $('#rvVid').src = S.videoURL; $('#cvVid').src = S.videoURL;
+      res();
+    };
+    v.onerror = () => { toast('Impossible de lire cette vidéo dans le navigateur.'); rej(new Error('video')); };
+    v.src = S.videoURL;
+  });
+}
+
+/* ============ progression ============ */
+const STEPS = ['Audio', 'Modèle', 'Transcription', 'Moments forts', 'Calage & vérification', 'Prêt'];
+function setStep(i) { $('#steps').innerHTML = STEPS.map((s, k) => `<span class="step ${k < i ? 'done' : k === i ? 'on' : ''}">${k < i ? '✓ ' : ''}${s}</span>`).join(''); }
+function setProg(p, txt) { $('#barI').style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%'; if (txt != null) $('#progTxt').textContent = txt; }
+
+/* ============ audio ============ */
+async function extractAudio16k(file) {
+  const buf = await file.arrayBuffer();
+  let ctx;
+  try { ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 }); } catch (e) { ctx = new AudioContext(); }
+  const ab = await ctx.decodeAudioData(buf);
+  ctx.close && ctx.close();
+  let mono;
+  if (ab.sampleRate !== 16000) {
+    const off = new OfflineAudioContext(1, Math.ceil(ab.duration * 16000), 16000);
+    const src = off.createBufferSource(); src.buffer = ab; src.connect(off.destination); src.start();
+    const r = await off.startRendering(); mono = r.getChannelData(0);
+  } else {
+    mono = new Float32Array(ab.length);
+    for (let c = 0; c < ab.numberOfChannels; c++) { const d = ab.getChannelData(c); for (let i = 0; i < d.length; i++) mono[i] += d[i] / ab.numberOfChannels; }
+  }
+  // normalisation (les enregistrements faibles sont mal transcrits)
+  let sum = 0, peak = 0; for (let i = 0; i < mono.length; i++) { const x = mono[i]; sum += x * x; if (Math.abs(x) > peak) peak = Math.abs(x); }
+  const rms = Math.sqrt(sum / Math.max(1, mono.length));
+  const g = Math.min(rms > 0 ? 0.08 / rms : 1, 30);
+  if (g > 1.05) for (let i = 0; i < mono.length; i++) mono[i] = Math.tanh(mono[i] * g);
+  return mono;
+}
+function cutWindows(a, sr = 16000) {
+  const win = []; const fr = 800; const n = a.length; let p = 0;
+  const rmsAt = i => { let s = 0; const e = Math.min(n, i + fr); for (let k = i; k < e; k++) s += a[k] * a[k]; return s / fr; };
+  while (p < n) {
+    if (n - p <= 30 * sr) { win.push([p, n]); break; }
+    let best = p + 29 * sr, bv = Infinity;
+    for (let i = p + 20 * sr; i < p + 29.5 * sr; i += fr) { const v = rmsAt(i); if (v < bv) { bv = v; best = i; } }
+    win.push([p, best]); p = best;
+  }
+  return win;
+}
+
+/* ============ modèle Whisper (fichiers de l'artefact) ============ */
+const SPLIT = {
+  'models/Xenova/whisper-base/onnx/encoder_model_quantized.onnx': 2,
+  'models/Xenova/whisper-base/onnx/decoder_model_merged_quantized.onnx': 3,
+  'vendor/ort-wasm-simd-threaded.jsep.wasm': 2,
+};
+const _fetch = window.fetch.bind(window);
+async function fetchSplit(rel, n, onp) {
+  const parts = []; let got = 0;
+  for (let i = 0; i < n; i++) {
+    const r = await _fetch(BASE + rel + '.part' + i + '.wasm');
+    if (!r.ok) throw new Error('fichier manquant : ' + rel + '.part' + i + '.wasm');
+    const b = await r.arrayBuffer(); got += b.byteLength; parts.push(b); onp && onp(got);
+  }
+  return new Blob(parts);
+}
+window.fetch = async function (input, init) {
+  const url = typeof input === 'string' ? input : (input && input.url) || String(input);
+  for (const rel in SPLIT) {
+    if (url.split('?')[0].endsWith(rel)) {
+      const blob = await fetchSplit(rel, SPLIT[rel], b => modelBytes(rel, b));
+      return new Response(blob, { status: 200, headers: { 'content-length': String(blob.size), 'content-type': rel.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream' } });
+    }
+  }
+  return _fetch(input, init);
+};
+const mbytes = {}; let mStepActive = false;
+function modelBytes(rel, b) { mbytes[rel] = b; if (!mStepActive) return; const tot = Object.values(mbytes).reduce((a, c) => a + c, 0); setProg(tot / 99e6, `Chargement du modèle de transcription… ${(tot / 1e6).toFixed(0)} / ~99 Mo`); }
+
+let asrP = null;
+function getASR() {
+  if (asrP) return asrP;
+  asrP = (async () => {
+    const T = await import(BASE + 'vendor/transformers.min.js');
+    const env = T.env;
+    env.allowRemoteModels = false; env.allowLocalModels = true;
+    env.localModelPath = BASE + 'models/';
+    let cacheOK = false; try { if (self.caches) { await caches.open('cf-test'); cacheOK = true; } } catch (e) { }
+    env.useBrowserCache = cacheOK;
+    const wasmBlob = await fetchSplit('vendor/ort-wasm-simd-threaded.jsep.wasm', 2, b => modelBytes('wasm', b));
+    const o = env.backends.onnx;
+    o.wasm.wasmPaths = { mjs: BASE + 'vendor/ort-wasm-simd-threaded.jsep.mjs', wasm: BASE + 'vendor/ort-wasm-simd-threaded.jsep.wasm' };
+    o.wasm.wasmBinary = await wasmBlob.arrayBuffer();
+    o.wasm.numThreads = self.crossOriginIsolated ? Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1)) : 1; o.wasm.proxy = false;
+    const asr = await T.pipeline('automatic-speech-recognition', 'Xenova/whisper-base', { device: 'wasm', dtype: { encoder_model: 'q8', decoder_model_merged: 'q8' } });
+    return asr;
+  })();
+  asrP.catch(() => { asrP = null; });
+  return asrP;
+}
+
+function mergeWords(chunks, off, out) {
+  for (const c of chunks || []) {
+    const raw = c.text || ''; if (!raw.trim()) continue;
+    let [s, e] = c.timestamp || [null, null];
+    if (s == null) s = out.length ? out[out.length - 1].e : off; else s += off;
+    if (e == null) e = s + 0.3; else e += off;
+    const last = out[out.length - 1];
+    if (last && !/^\s/.test(raw) && last.e >= off) { last.w += raw.trim(); last.e = Math.max(last.e, e); }
+    else out.push({ w: raw.trim(), s, e: Math.max(e, s + 0.05) });
+  }
+}
+function collapseRepeats(ws) {
+  // supprime les boucles d'hallucination de Whisper ("de la carrière de la carrière ...")
+  const out = [];
+  for (let i = 0; i < ws.length;) {
+    let skipped = false;
+    for (let n = 1; n <= 4 && !skipped; n++) {
+      if (i + 3 * n > ws.length) continue;
+      const k = j => ws[j].w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+      let rep = 1;
+      while (i + (rep + 1) * n <= ws.length) { let same = true; for (let t = 0; t < n; t++) if (k(i + t) !== k(i + rep * n + t)) { same = false; break; } if (!same) break; rep++; }
+      if (rep >= 3) { for (let t = 0; t < n; t++) out.push(ws[i + t]); i += rep * n; skipped = true; }
+    }
+    if (!skipped) { out.push(ws[i]); i++; }
+  }
+  return out;
+}
+async function transcribe(audio, lang) {
+  const sr = 16000; const wins = cutWindows(audio, sr); const words = [];
+  const asr = await getASR();
+  setStep(2);
+  const t0 = performance.now(); let doneSec = 0; const total = audio.length / sr;
+  for (let k = 0; k < wins.length; k++) {
+    const [a, b] = wins[k]; const seg = audio.subarray(a, b);
+    let e2 = 0; for (let i = 0; i < seg.length; i += 4) e2 += seg[i] * seg[i];
+    if (Math.sqrt(e2 / (seg.length / 4)) > 0.004) {
+      let r;
+      try { r = await asr(seg, { language: lang, task: 'transcribe', return_timestamps: 'word' }); }
+      catch (err) { log('mots horodatés indisponibles, repli segments : ' + err.message); r = await asr(seg, { language: lang, task: 'transcribe', return_timestamps: true }); r.chunks = splitSegChunks(r.chunks); }
+      const tmp = []; mergeWords(r.chunks, a / sr, tmp);
+      words.push(...collapseRepeats(tmp));
+    }
+    doneSec = b / sr;
+    const el = (performance.now() - t0) / 1000; const rate = el / doneSec;
+    setProg(doneSec / total, `Transcription… ${fmt(doneSec)} / ${fmt(total)}`);
+    $('#eta').textContent = k > 0 ? 'reste ~' + Math.ceil((total - doneSec) * rate / 60) + ' min' : '';
+    await sleep(0);
+  }
+  $('#eta').textContent = '';
+  return words;
+}
+function splitSegChunks(chunks) {
+  const out = [];
+  for (const c of chunks || []) {
+    const ws = (c.text || '').trim().split(/\s+/).filter(Boolean); if (!ws.length) continue;
+    const [s, e0] = c.timestamp; const e = e0 == null ? s + ws.length * 0.35 : e0;
+    const L = ws.reduce((a, w) => a + w.length + 1, 0); let acc = 0;
+    for (const w of ws) { const ss = s + (e - s) * acc / L; acc += w.length + 1; out.push({ text: ' ' + w, timestamp: [ss, s + (e - s) * acc / L] }); }
+  }
+  return out;
+}
+
+/* ============ transcription collée (YouTube / SRT / VTT) ============ */
+function parseTS(str) { const p = str.replace(',', '.').split(':').map(Number); if (p.some(x => !isFinite(x))) return null; return p.reduce((a, x) => a * 60 + x, 0); }
+const TS_RE = /^\[?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d+)?)\]?(?:\s*(?:-->|–|-)\s*\[?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d+)?)\]?)?\s*(.*)$/;
+const NOISE_RE = /^(\d+\s*(h|heures?|min|minutes?|s|secondes?|seconds?|minutes? et|hours?)\b.*|webvtt.*|\d+)$/i;
+function parsePastedTranscript(txt, dur) {
+  const segs = []; let curS = null, lastLine = '';
+  for (let line of txt.replace(/\r/g, '').split('\n')) {
+    line = line.trim(); if (!line) continue;
+    const m = line.match(TS_RE);
+    if (m) { segs.push({ s: parseTS(m[1]), e: m[2] ? parseTS(m[2]) : null, t: '' }); if (m[3] && !m[2]) segs[segs.length - 1].t = m[3]; continue; }
+    if (!segs.length || NOISE_RE.test(line)) continue;
+    const clean1 = line.replace(/<[^>]+>/g, '').trim(); if (!clean1 || clean1 === lastLine) continue; lastLine = clean1;
+    const sg = segs[segs.length - 1]; sg.t += (sg.t ? ' ' : '') + clean1;
+  }
+  const clean = segs.map(x => ({ ...x, t: x.t.replace(/<[^>]+>/g, '').replace(/\[(musique|music|applaudissements|rires|applause|laughter)\]/gi, '').trim() })).filter(x => x.t && x.s != null);
+  clean.sort((a, b) => a.s - b.s);
+  const words = [];
+  clean.forEach((sg, i) => {
+    const nx = clean[i + 1]; let e = sg.e != null ? sg.e : (nx ? nx.s : sg.s + Math.min(6, sg.t.split(/\s+/).length * 0.35));
+    if (dur) e = Math.min(e, dur); if (e <= sg.s) e = sg.s + 0.5;
+    const ws = sg.t.split(/\s+/).filter(Boolean); const L = ws.reduce((a, w) => a + w.length + 1, 0); let acc = 0;
+    for (const w of ws) { const a = sg.s + (e - sg.s) * acc / L; acc += w.length + 1; words.push({ w, s: +a.toFixed(2), e: +(sg.s + (e - sg.s) * acc / L).toFixed(2) }); }
+  });
+  return words;
+}
+$('#ytText').addEventListener('input', () => { const t = $('#ytText').value.trim(); if (!t) { $('#ytInfo').textContent = ''; return; } const w = parsePastedTranscript(t, S.dur); $('#ytInfo').textContent = w.length ? `✓ ${w.length} mots détectés (${fmt(w[0].s)} → ${fmt(w[w.length - 1].e)}) — la transcription automatique sera sautée` : '⚠️ Aucun horodatage reconnu : copie bien le texte avec les temps (0:00, 0:04…)'; });
+
+/* ============ segments & moments forts ============ */
+function sentences(words) {
+  const out = []; let cur = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i]; cur.push(w);
+    const gap = i + 1 < words.length ? words[i + 1].s - w.e : 9;
+    if (/[.?!…]$/.test(w.w) || gap > 0.9 || cur.length > 28) { out.push({ s: cur[0].s, e: cur[cur.length - 1].e, t: cur.map(x => x.w).join(' ') }); cur = []; }
+  }
+  if (cur.length) out.push({ s: cur[0].s, e: cur[cur.length - 1].e, t: cur.map(x => x.w).join(' ') });
+  return out;
+}
+const TITLE_RULES = `Règles pour les titres (incrustés en haut de la vidéo pendant tout le clip) :
+- objectif unique : que le spectateur reste jusqu'à la fin ; le titre doit susciter curiosité, choc ou émotion
+- il peut exagérer à fond, il n'a pas besoin d'être littéralement vrai (rester lié au contenu du clip)
+- toujours à la 3e personne (il / elle / ils), jamais "je"
+- court : 4 à 9 mots maximum
+- 1 à 2 émojis bien choisis (début et/ou fin), majuscules ponctuelles autorisées sur un mot choc
+- exemples du style voulu : "😰 Le chirurgien refuse de l'opérer… 💔", "🤼‍♂️ Il survit au catch… mais pas à une ARMOIRE 💀", "😤 Le script l'a forcé à perdre… 🤼‍♂️💔"`;
+const TAG_RULES = `Pour chaque clip, donne aussi :
+- "caption" : légende de publication, 1 phrase d'accroche courte à la 3e personne avec émojis, qui donne envie de regarder jusqu'au bout
+- "hashtags" : 20 à 25 hashtags SANS doublons, triés du plus utile au moins utile pour la viralité : d'abord 3-4 très spécifiques au sujet exact du clip, puis la niche (thème, univers, communauté), puis l'émotion/le format (storytime, anecdote, choc…), puis 2-3 larges francophones (#pourtoi #fyp #tiktokfrance #viral). Pas d'espaces ni d'accents.`;
+async function findMoments(words, n, range) {
+  const sents = sentences(words);
+  const [mn, mx] = range.split('-').map(Number);
+  if (hasClaude()) {
+    try {
+      let lines = sents.map(s => `[${s.s.toFixed(1)}-${s.e.toFixed(1)}] ${s.t}`).join('\n');
+      if (lines.length > 120000) lines = lines.slice(0, 120000);
+      const prompt = `Tu es monteur expert TikTok/Reels/Shorts. Voici la transcription horodatée (en secondes) d'une vidéo longue.
+La transcription peut contenir des erreurs de reconnaissance : base-toi sur le sens global, et ne construis pas un titre sur un mot douteux.
+Choisis les ${n} meilleurs moments à transformer en clips verticaux viraux : chaque clip doit être compréhensible seul, commencer par une accroche forte (pas au milieu d'une idée), avoir une montée et une chute/punchline, durer entre ${mn} et ${mx} secondes. Pas de chevauchement entre clips. Les bornes start/end doivent tomber sur des débuts/fins de lignes.
+${TITLE_RULES}
+${TAG_RULES}
+Réponds UNIQUEMENT en JSON : {"clips":[{"start":nombre,"end":nombre,"title":"…","why":"une phrase","score":0-100,"caption":"…","hashtags":["#…"]}]} trié du plus viral au moins viral.
+
+TRANSCRIPTION :
+${lines}`;
+      const v = await askClaude(prompt);
+      const arr = (v && v.clips) || (Array.isArray(v) ? v : []);
+      const clips = arr.filter(c => isFinite(c.start) && isFinite(c.end) && c.end > c.start).slice(0, n).map(c => { const k = newClip(+c.start, +c.end, c.title || GENERIC_TITLES[0], c.why, c.score); k.caption = c.caption || ''; setTags(k, c.hashtags); return k; });
+      if (clips.length) return clips;
+    } catch (e) { log('Claude indisponible pour choisir les moments (' + (e.code || e.message) + ') → méthode automatique.'); }
+  }
+  return heuristicMoments(sents, n, mn, mx);
+}
+function heuristicMoments(sents, n, mn, mx) {
+  if (sents.length) { const span = sents[sents.length - 1].e - sents[0].s; mn = Math.min(mn, span * 0.8); mx = Math.max(mx, mn + 1); }
+  const EMO = /(incroyable|choqu|fou|folie|jamais|mort|peur|pleur|vérité|secret|grave|dingue|malade|honte|trahi|énorme|horrible|terrible|aimé|amour|argent|million|urgence|hôpital|blessé|tué|combat|gagné|perdu|choc|wesh|putain|frère|les gars)/gi;
+  const cands = [];
+  for (let i = 0; i < sents.length; i++) {
+    let j = i, txt = '';
+    while (j < sents.length && sents[j].e - sents[i].s < mx) {
+      txt += ' ' + sents[j].t; const d = sents[j].e - sents[i].s;
+      if (d >= mn) {
+        const nw = txt.split(/\s+/).length;
+        const sc = (txt.match(/[!?]/g) || []).length * 2 + (txt.match(EMO) || []).length * 3 + nw / d * 2 + (/[?!]/.test(sents[j].t) ? 3 : 0);
+        cands.push({ s: sents[i].s, e: sents[j].e, sc });
+      }
+      j++;
+    }
+  }
+  cands.sort((a, b) => b.sc - a.sc);
+  const pick = [];
+  for (const c of cands) { if (pick.length >= n) break; if (pick.every(p => c.e <= p.s || c.s >= p.e)) pick.push(c); }
+  const max = pick.length ? pick[0].sc : 1;
+  return pick.map((c, k) => { const cl = newClip(c.s, c.e, GENERIC_TITLES[k % GENERIC_TITLES.length], 'Choisi automatiquement (Claude indisponible)', Math.round(60 + 35 * c.sc / max)); setTags(cl, fallbackTags(cl)); return cl; });
+}
+function newClip(s, e, title, why, score) {
+  return { id: uid(), start: Math.max(0, s - 0.15), end: Math.min(S.dur || e + 1, e + 0.35), title, why: why || '', score: score || null, mode: S.vw > S.vh ? 'crop' : 'crop', zoom: 1, x: 0.5, y: 0.5, ty: 0.30, sy: 0.70, caption: '', tags: [], tagsOn: [], ...gpDefaults($('#gpDef') ? $('#gpDef').value : 'none') };
+}
+
+/* ============ import par lien (mode serveur) ============ */
+$('#btnLink').onclick = async () => {
+  const url = $('#linkUrl').value.trim(); if (!url) return;
+  const btn = $('#btnLink'), bar = $('#linkBar'), info = $('#linkInfo'); btn.disabled = true; bar.style.display = 'block'; bar.firstElementChild.style.width = '0%';
+  const setI = t => info.textContent = t;
+  try {
+    setI('Analyse du lien…');
+    let r = await _fetch('./api/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) });
+    let j = await r.json(); if (!r.ok) throw new Error(j.error || 'erreur');
+    const id = j.id;
+    for (;;) {
+      await sleep(1200);
+      r = await _fetch('./api/jobs/' + id); j = await r.json(); if (!r.ok) throw new Error(j.error || 'erreur');
+      if (j.status === 'error') throw new Error(j.error || 'téléchargement impossible');
+      bar.firstElementChild.style.width = Math.round((j.progress || 0) * 100) + '%';
+      setI(j.status === 'done' ? 'Récupération du fichier…' : `Téléchargement sur le serveur… ${Math.round((j.progress || 0) * 100)} %${j.title ? ' — ' + j.title : ''}`);
+      if (j.status === 'done') break;
+    }
+    const fr = await _fetch('./api/jobs/' + id + '/file'); if (!fr.ok) throw new Error('fichier introuvable');
+    const total = +fr.headers.get('content-length') || 0; const reader = fr.body.getReader(); const parts = []; let got = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (total) { bar.firstElementChild.style.width = Math.round(got / total * 100) + '%'; setI(`Transfert vers ton navigateur… ${Math.round(got / total * 100)} %`); } }
+    const name = (j.title || 'video').replace(/[\\/:*?"<>|]/g, '').slice(0, 80) + '.mp4';
+    if (j.subs) { try { const sr = await _fetch('./api/jobs/' + id + '/subs'); if (sr.ok && !$('#ytText').value.trim()) { $('#ytText').value = await sr.text(); $('#ytBox').open = true; $('#ytText').dispatchEvent(new Event('input')); } } catch (e) { } }
+    await onPickFile(new File(parts, name, { type: 'video/mp4' }));
+    setI('✓ Vidéo importée' + (j.subs ? ' (avec sa transcription)' : '') + ' — tu peux générer les clips.');
+  } catch (e) { setI('❌ ' + (e.message || e)); }
+  btn.disabled = false;
+};
+
+/* ============ calage sur l'audio + vérification ============ */
+let audioCache = null;
+async function getAudio() { if (!audioCache || audioCache.key !== S.fileKey) { audioCache = null; const a = await extractAudio16k(S.file); audioCache = { key: S.fileKey, a }; } return audioCache.a; }
+async function whisperRange(a0, a1) {
+  const audio = await getAudio(); const asr = await getASR(); const sr = 16000;
+  const seg = audio.subarray(Math.floor(a0 * sr), Math.floor(a1 * sr)); const out = [];
+  for (const [a, b] of cutWindows(seg, sr)) {
+    const sub = seg.subarray(a, b); let r;
+    try { r = await asr(sub, { language: S.lang, task: 'transcribe', return_timestamps: 'word' }); }
+    catch (e) { r = await asr(sub, { language: S.lang, task: 'transcribe', return_timestamps: true }); r.chunks = splitSegChunks(r.chunks); }
+    const tmp = []; mergeWords(r.chunks, a0 + a / sr, tmp); out.push(...collapseRepeats(tmp)); await sleep(0);
+  }
+  return out;
+}
+async function alignClip(c) {
+  const a0 = Math.max(0, c.start - 1.2), a1 = Math.min(S.dur || c.end + 1.2, c.end + 1.2);
+  const ws = await whisperRange(a0, a1);
+  const inside = ws.filter(w => (w.s + w.e) / 2 >= c.start - 0.25 && (w.s + w.e) / 2 <= c.end + 0.25);
+  if (!inside.length) return false;
+  const lo = Math.min(c.start, inside[0].s), hi = Math.max(c.end, inside[inside.length - 1].e);
+  S.words = S.words.filter(w => w.e <= lo + 0.05 || w.s >= hi - 0.05).concat(inside).sort((x, y) => x.s - y.s);
+  return true;
+}
+function snapBounds(c) {
+  const ws = clipWords(c); if (!ws.length) return;
+  c.start = +Math.max(0, ws[0].s - 0.15).toFixed(2); c.end = +Math.min(S.dur || 1e9, ws[ws.length - 1].e + 0.4).toFixed(2);
+}
+async function verifyClip(c, refText) {
+  if (!hasClaude()) return;
+  const heard = clipWords(c).map(w => w.w).join(' '); if (!heard) return;
+  const v = await askClaude(`Tu vérifies les sous-titres d'un clip vidéo vertical. Ils doivent correspondre EXACTEMENT à ce qui est dit dans l'audio.
+TRANSCRIPTION DE L'AUDIO (reconnaissance vocale mot à mot : c'est la référence pour l'ordre et le nombre de mots, mais certains mots peuvent être mal reconnus) :
+${heard}
+${refText ? `\nTRANSCRIPTION YOUTUBE DU MÊME PASSAGE (peut être décalée, incomplète ou fausse ; sert seulement d'indice pour les mots mal reconnus et les noms propres) :\n${refText}\n` : ''}
+Règles pour "text" : garde exactement les paroles prononcées, dans le même ordre ; corrige uniquement les mots mal reconnus (d'après le contexte${refText ? ' et la transcription YouTube' : ''}), les noms propres et l'orthographe, et ajoute la ponctuation ; ne reformule pas, ne résume pas, n'ajoute ni ne supprime de phrases ; garde le même nombre de mots autant que possible ; style oral conservé.
+Vérifie aussi que le titre incrusté "${c.title}" est cohérent avec ce qui est réellement dit dans le clip : il peut exagérer, mais ne doit pas parler d'un sujet ou d'un fait absent du clip. S'il ne l'est pas, propose un nouveau titre.
+${TITLE_RULES}
+Réponds UNIQUEMENT en JSON : {"text":"…","title_ok":true,"title":"…"}`);
+  if (v && typeof v.text === 'string' && v.text.trim()) applyText(c, v.text);
+  if (v && v.title_ok === false && v.title) c.title = v.title;
+  c.verified = true;
+}
+async function alignAndVerify(c, useAudio) {
+  const ref = clipWords(c).map(w => w.w).join(' ');
+  if (useAudio) await alignClip(c);
+  snapBounds(c);
+  if (hasClaude()) await verifyClip(c, useAudio ? ref : '');
+  else if (useAudio && ref) applyText(c, ref); // sans Claude : texte YouTube, minutage de l'audio
+  snapBounds(c);
+}
+
+/* ============ pipeline principal ============ */
+$('#btnGo').onclick = async () => {
+  if (!S.file) return;
+  S.lang = $('#lang').value;
+  $('#btnGo').disabled = true; $('#prog').style.display = 'block'; $('#log').textContent = '';
+  try {
+    const pasted = $('#ytText').value.trim();
+    let words;
+    if (pasted) {
+      words = parsePastedTranscript(pasted, S.dur);
+      if (!words.length) throw new Error('Transcription collée illisible (pas d\'horodatage). Vide le champ pour la transcription automatique.');
+      setStep(3); log('Transcription collée utilisée (étapes audio/modèle sautées)');
+    } else {
+      setStep(0); setProg(0.05, 'Extraction de l\'audio…');
+      const audio = await getAudio();
+      log(`Audio : ${(audio.length / 16000 / 60).toFixed(1)} min`);
+      setStep(1); mStepActive = true; setProg(0, 'Chargement du modèle de transcription…');
+      await getASR(); mStepActive = false;
+      words = await transcribe(audio, S.lang);
+    }
+    S.words = words; log(`${words.length} mots transcrits`);
+    if (!words.length) throw new Error('Aucune parole détectée.');
+    setStep(3); setProg(0.5, hasClaude() ? 'Claude cherche les meilleurs moments…' : 'Recherche des moments forts…');
+    S.clips = await findMoments(words, Math.max(1, Math.min(20, +$('#nClips').value || 7)), $('#dur').value);
+    if ($('#optAlign').checked) {
+      setStep(4);
+      if (pasted) { setProg(0, 'Extraction de l\'audio…'); await getAudio(); mStepActive = true; setProg(0, 'Chargement du modèle de transcription…'); await getASR(); mStepActive = false; }
+      for (let i = 0; i < S.clips.length; i++) {
+        const c = S.clips[i]; setProg(i / S.clips.length, `Calage des sous-titres sur l'audio et vérification : clip ${i + 1} / ${S.clips.length}…`);
+        try { await alignAndVerify(c, !!pasted); } catch (e) { log(`Clip ${i + 1} : vérification impossible (${e.code || e.message})`); }
+      }
+    }
+    setStep(5); setProg(1, `${S.clips.length} clips prêts`);
+    saveProject();
+    openEditor();
+  } catch (e) {
+    console.error(e); log('Erreur : ' + (e.message || e)); toast('Erreur : ' + (e.message || e), 6000);
+  } finally { $('#btnGo').disabled = false; mStepActive = false; }
+};
+
+/* ============ éditeur ============ */
+function openEditor() {
+  $('#start').style.display = 'none'; $('#prog').style.display = 'none';
+  $('#editor').style.display = 'grid'; $('#trWrap').style.display = 'block';
+  $('#btnNew').style.display = ''; $('#btnExportProj').style.display = '';
+  $('#hdrInfo').textContent = S.name || '';
+  renderTranscript();
+  selectClip(S.clips.length ? 0 : -1);
+}
+$('#btnNew').onclick = () => { stopPreview(); $('#editor').style.display = 'none'; $('#trWrap').style.display = 'none'; $('#start').style.display = 'block'; $('#btnNew').style.display = 'none'; $('#btnExportProj').style.display = 'none'; listSaved(); };
+
+function cur() { return S.clips[S.sel]; }
+function clipWords(c) { return S.words.filter(w => w.e > c.start + 0.05 && w.s < c.end - 0.05); }
+function renderClipList() {
+  const box = $('#clips'); box.innerHTML = '';
+  S.clips.forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'ci' + (i === S.sel ? ' sel' : '');
+    d.innerHTML = `<b></b><small>#${i + 1} · ${fmt(c.start)} → ${fmt(c.end)} · ${(c.end - c.start).toFixed(0)} s</small><div style="margin-top:4px">${c.score ? `<span class="badge">score ${c.score}</span>` : ''}${rendered[c.id] ? '<span class="badge ok">rendu ✓</span>' : ''}</div>`;
+    d.querySelector('b').textContent = c.title; if (c.why) d.title = c.why;
+    d.onclick = () => selectClip(i);
+    box.appendChild(d);
+  });
+  $('#btnZip').disabled = !S.clips.length;
+}
+function selectClip(i) {
+  stopPreview(); S.sel = i; renderClipList();
+  const c = cur(); const dis = !c;
+  for (const el of document.querySelectorAll('#editor .card input, #editor .card select, #editor .card textarea, #editor .card button, #btnRender, #btnPlay')) el.disabled = dis;
+  if (!c) { drawPreview(); return; }
+  $('#cTitle').value = c.title; $('#cStart').value = c.start.toFixed(1); $('#cEnd').value = c.end.toFixed(1);
+  $('#cMode').value = c.mode; $('#cZoom').value = c.zoom; $('#cX').value = c.x; $('#cY').value = c.y; $('#cTY').value = c.ty; $('#cSY').value = c.sy;
+  $('#cText').value = clipWords(c).map(w => w.w).join(' ');
+  $('#cCaption').value = c.caption || ''; $('#ideas').innerHTML = '';
+  if (!c.tags) { c.tags = []; c.tagsOn = []; } renderTags();
+  if (!c.gp) c.gp = 'none'; if (!c.gpR) c.gpR = 0.58; $('#cGp').value = c.gp; $('#cGpR').value = c.gpR; gpUIState();
+  if (c.covPos == null) c.covPos = 0.3; $('#cCovPos').value = c.covPos; $('#cCovT').value = c.covTitle || '';
+  refreshCover();
+  $('#btnDl').disabled = !rendered[c.id]; $('#rstat').textContent = rendered[c.id] ? 'rendu prêt' : '';
+  highlightTranscript();
+  seekPreview(c.start);
+}
+function bindNum(id, key, after) {
+  $(id).addEventListener('input', () => { const c = cur(); if (!c) return; let v = parseFloat($(id).value); if (!isFinite(v)) return; c[key] = v; invalidate(c); after && after(); drawPreview(); saveProject(); });
+}
+function invalidate(c) { if (c === cur()) refreshCover(); if (rendered[c.id]) { URL.revokeObjectURL(rendered[c.id].url); delete rendered[c.id]; $('#btnDl').disabled = true; $('#rstat').textContent = ''; } }
+$('#cTitle').addEventListener('input', () => { const c = cur(); if (!c) return; c.title = $('#cTitle').value; invalidate(c); renderClipList(); drawPreview(); saveProject(); refreshCover(); });
+$('#cMode').addEventListener('change', () => { const c = cur(); c.mode = $('#cMode').value; invalidate(c); drawPreview(); saveProject(); });
+bindNum('#cZoom', 'zoom'); bindNum('#cX', 'x'); bindNum('#cY', 'y'); bindNum('#cTY', 'ty'); bindNum('#cSY', 'sy');
+function setBounds(s, e) {
+  const c = cur(); if (!c) return;
+  s = Math.max(0, Math.min(s, S.dur - 1)); e = Math.max(s + 1, Math.min(e, S.dur));
+  c.start = +s.toFixed(2); c.end = +e.toFixed(2);
+  $('#cStart').value = c.start.toFixed(1); $('#cEnd').value = c.end.toFixed(1);
+  $('#cText').value = clipWords(c).map(w => w.w).join(' ');
+  invalidate(c); renderClipList(); highlightTranscript(); saveProject(); seekPreview(c.start);
+}
+$('#cStart').addEventListener('change', () => setBounds(+$('#cStart').value, cur().end));
+$('#cEnd').addEventListener('change', () => setBounds(cur().start, +$('#cEnd').value));
+document.querySelectorAll('[data-adj]').forEach(b => b.onclick = () => { const [k, d] = b.dataset.adj.split(','); const c = cur(); if (k === 's') setBounds(c.start + +d, c.end); else setBounds(c.start, c.end + +d); });
+$('#btnDel').onclick = () => { if (S.sel < 0) return; const c = cur(); invalidate(c); S.clips.splice(S.sel, 1); saveProject(); selectClip(Math.min(S.sel, S.clips.length - 1)); };
+$('#btnAdd').onclick = () => {
+  const t = cur() ? cur().end : 0; const c = newClip(t, Math.min(S.dur, t + 30), '✍️ Nouveau titre 😱', 'Ajouté à la main', null);
+  S.clips.push(c); saveProject(); selectClip(S.clips.length - 1);
+};
+
+/* texte des sous-titres : on réécrit la transcription globale sur la plage du clip */
+function applyText(c, text) {
+  const old = clipWords(c); const toks = text.trim().split(/\s+/).filter(Boolean);
+  if (!old.length || !toks.length) return;
+  let nw;
+  if (toks.length === old.length) nw = old.map((w, i) => ({ w: toks[i], s: w.s, e: w.e }));
+  else {
+    // projection proportionnelle sur la chronologie des anciens mots
+    const oldStr = old.map(w => w.w).join(' '); const spans = []; let p = 0;
+    old.forEach(w => { spans.push([p, p + w.w.length, w.s, w.e]); p += w.w.length + 1; });
+    const posToT = q => { const x = q / text.trim().length * oldStr.length; for (const [a, b, s, e] of spans) { if (x <= b + 1) return s + (e - s) * Math.max(0, Math.min(1, (x - a) / Math.max(1, b - a))); } return old[old.length - 1].e; };
+    const nt = text.trim(); let q = 0; nw = [];
+    toks.forEach(t => { const a = nt.indexOf(t, q); const b = a + t.length; q = b; nw.push({ w: t, s: posToT(a), e: posToT(b) }); });
+  }
+  const i0 = S.words.indexOf(old[0]); S.words.splice(i0, old.length, ...nw);
+  invalidate(c); saveProject(); renderTranscript(); drawPreview();
+}
+$('#btnApplyText').onclick = () => { applyText(cur(), $('#cText').value); toast('Sous-titres mis à jour'); };
+$('#btnFix').onclick = async () => {
+  const c = cur(); const b = $('#btnFix'); b.disabled = true; b.textContent = '…';
+  try {
+    const v = await askClaude(`Voici la transcription automatique (Whisper, ${S.lang}) d'un extrait de vidéo, avec des erreurs de reconnaissance. Corrige uniquement les mots mal reconnus et la ponctuation, en gardant le style oral et le même ordre. N'ajoute ni ne supprime d'idées. Le contexte : titre du clip = "${c.title}".
+Réponds UNIQUEMENT en JSON : {"text":"…"}
+
+TEXTE :
+${$('#cText').value}`);
+    if (v && v.text) { $('#cText').value = v.text; applyText(c, v.text); toast('Corrigé ✓ (relis quand même)'); }
+  } catch (e) { toast('Correction impossible : ' + (e.code || e.message)); }
+  b.disabled = false; b.textContent = '✨ Corriger avec Claude';
+};
+$('#btnAlign').onclick = async () => {
+  const c = cur(); if (!c) return; const b = $('#btnAlign'); b.disabled = true; stopPreview();
+  try {
+    b.textContent = '🎧 chargement…'; mStepActive = false; await getAudio(); await getASR();
+    b.textContent = '🎧 calage…'; await alignAndVerify(c, true);
+    invalidate(c); saveProject(); renderTranscript(); selectClip(S.sel); toast(hasClaude() ? 'Sous-titres calés sur l\'audio et vérifiés ✓' : 'Sous-titres calés sur l\'audio ✓');
+  } catch (e) { console.error(e); toast('Calage impossible : ' + (e.code || e.message), 6000); }
+  b.disabled = false; b.textContent = '🎧 Recaler sur l\'audio';
+};
+$('#btnIdeas').onclick = async () => {
+  const c = cur(); const b = $('#btnIdeas'); b.disabled = true; b.textContent = '…';
+  try {
+    const v = await askClaude(`Propose 3 titres très différents (choc / curiosité / émotion) pour ce clip vertical.
+${TITLE_RULES}
+Réponds UNIQUEMENT en JSON : {"titles":["…","…","…"]}
+
+TRANSCRIPTION DU CLIP :
+${clipWords(c).map(w => w.w).join(' ')}`);
+    const box = $('#ideas'); box.innerHTML = '';
+    (v.titles || []).forEach(t => { const bt = document.createElement('button'); bt.className = 'sm'; bt.textContent = t; bt.onclick = () => { $('#cTitle').value = t; $('#cTitle').dispatchEvent(new Event('input')); box.innerHTML = ''; }; box.appendChild(bt); });
+  } catch (e) { toast('Impossible : ' + (e.code || e.message)); }
+  b.disabled = false; b.textContent = '✨ Idées';
+};
+$('#btnCaption').onclick = async () => {
+  const c = cur(); const b = $('#btnCaption'); b.disabled = true; b.textContent = '…';
+  try {
+    if (!hasClaude()) { setTags(c, fallbackTags(c)); renderTags(); saveProject(); toast('Hashtags générés automatiquement (Claude indisponible)'); b.disabled = false; b.textContent = '✨ Générer légende + hashtags'; return; }
+    const v = await askClaude(`Prépare la publication TikTok/Instagram de ce clip vertical.
+Titre incrusté : "${c.title}"
+${TAG_RULES}
+Réponds UNIQUEMENT en JSON : {"caption":"…","hashtags":["#…"]}
+
+TRANSCRIPTION :
+${clipWords(c).map(w => w.w).join(' ')}`);
+    c.caption = v.caption || c.caption || ''; $('#cCaption').value = c.caption; if (v.hashtags && v.hashtags.length) setTags(c, v.hashtags); renderTags(); saveProject();
+  } catch (e) { toast('Impossible : ' + (e.code || e.message)); }
+  b.disabled = false; b.textContent = '✨ Générer légende + hashtags';
+};
+$('#cCaption').addEventListener('input', () => { const c = cur(); if (c) { c.caption = $('#cCaption').value; saveProject(); } });
+
+
+/* ============ réglages gameplay ============ */
+function gpUIState() { const c = cur(); const up = c && c.gp === 'upload'; $('#btnGpUp').style.display = up ? '' : 'none'; $('#gpName').textContent = up ? (S.gpName ? '✓ ' + S.gpName : 'aucune vidéo importée') : ''; $('#cGpR').disabled = !c || c.gp === 'none'; }
+$('#cGp').addEventListener('change', () => {
+  const c = cur(); if (!c) return; const was = c.gp || 'none'; c.gp = $('#cGp').value; c.gpR = c.gpR || 0.58;
+  if (was === 'none' && c.gp !== 'none') { c.ty = 0.12; c.sy = c.gpR; } else if (was !== 'none' && c.gp === 'none') { c.ty = 0.30; c.sy = 0.70; }
+  $('#cTY').value = c.ty; $('#cSY').value = c.sy; gpUIState();
+  if (c.gp === 'upload' && !S.gpURL) $('#gpFile').click();
+  invalidate(c); drawPreview(); saveProject();
+});
+$('#cGpR').addEventListener('input', () => { const c = cur(); if (!c) return; const old = c.gpR || 0.58; c.gpR = +$('#cGpR').value; if (Math.abs(c.sy - old) < 0.03) { c.sy = c.gpR; $('#cSY').value = c.sy; } invalidate(c); drawPreview(); saveProject(); });
+$('#btnGpUp').onclick = () => $('#gpFile').click();
+$('#gpFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; setGameplayFile(f, true); };
+function setGameplayFile(f, save) {
+  if (S.gpURL) URL.revokeObjectURL(S.gpURL); S.gpURL = URL.createObjectURL(f); S.gpName = f.name || 'gameplay';
+  gpPV.src = S.gpURL; gpRV.src = S.gpURL; gpPV.onloadeddata = () => drawPreview(); gpUIState();
+  if (save) idbOp('videos', 'readwrite', st => st.put(f, '__gameplay__'));
+  S.clips.forEach(c => { if (c.gp === 'upload') invalidate(c); });
+}
+$('#btnGpAll').onclick = () => { const c = cur(); if (!c) return; S.clips.forEach(k => { if (k === c) return; k.gp = c.gp; k.gpR = c.gpR; k.ty = c.ty; k.sy = c.sy; invalidate(k); }); saveProject(); renderClipList(); toast('Appliqué à tous les clips ✓'); };
+(async () => { const b = await idbOp('videos', 'readonly', st => st.get('__gameplay__')); if (b) setGameplayFile(b, false); })();
+
+/* ============ hashtags ============ */
+const BASE_TAGS = ['#pourtoi', '#fyp', '#foryou', '#viral', '#tiktokfrance', '#storytime', '#clip', '#france', '#trending'];
+const STOP = new Set('alors apres avant avec avoir comme dans depuis elles encore etait faire juste mais meme parce pendant peut plus pour quand quoi sans sont tout tous tres voila vraiment cette leurs notre votre aussi donc enfin bien deja aurait avait etais vient viens actuellement chose choses gars amis moment personne jamais toujours'.split(' '));
+function normTag(t) { t = String(t || '').trim().replace(/^#+/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9_]/g, ''); return t ? '#' + t.toLowerCase() : ''; }
+function setTags(c, arr) { const seen = new Set(); c.tags = []; for (const t of arr || []) { const n = normTag(t); if (n && !seen.has(n)) { seen.add(n); c.tags.push(n); } } c.tagsOn = c.tags.slice(0, 8); }
+function fallbackTags(c) {
+  const words = (c.title + ' ' + clipWords(c).map(w => w.w).join(' ')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]{5,}/g) || [];
+  const cnt = {}; words.forEach(w => { if (!STOP.has(w)) cnt[w] = (cnt[w] || 0) + 1; });
+  return [...Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 8).map(e => e[0]), ...BASE_TAGS];
+}
+function renderTags() {
+  const c = cur(); const box = $('#tags'); box.innerHTML = ''; if (!c) return;
+  if (!c.tags || !c.tags.length) { box.innerHTML = '<span class="muted" style="font-size:12px">Aucun hashtag — clique sur « Générer légende + hashtags ».</span>'; return; }
+  c.tags.forEach(t => { const b = document.createElement('span'); b.className = 'tag' + (c.tagsOn.includes(t) ? ' on' : ''); b.textContent = t; b.onclick = () => { const i = c.tagsOn.indexOf(t); if (i >= 0) c.tagsOn.splice(i, 1); else c.tagsOn.push(t); c.tagsOn.sort((a, b2) => c.tags.indexOf(a) - c.tags.indexOf(b2)); renderTags(); saveProject(); }; box.appendChild(b); });
+}
+$('#tagAdd').addEventListener('keydown', e => { if (e.key !== 'Enter') return; const c = cur(); const n = normTag($('#tagAdd').value); if (c && n && !c.tags.includes(n)) { c.tags.unshift(n); c.tagsOn.unshift(n); renderTags(); saveProject(); } $('#tagAdd').value = ''; });
+$('#btnTagAll').onclick = () => { const c = cur(); if (c) { c.tagsOn = c.tags.slice(); renderTags(); saveProject(); } };
+$('#btnTagNone').onclick = () => { const c = cur(); if (c) { c.tagsOn = []; renderTags(); saveProject(); } };
+function pubText(c, max) { const tags = (c.tagsOn || []).slice(0, max || 999); return ((c.caption || '').trim() + '\n\n' + tags.join(' ')).trim(); }
+async function copyTxt(t) { try { await navigator.clipboard.writeText(t); toast('Copié ✓'); } catch (e) { $('#cCaption').value = t; $('#cCaption').select(); toast('Sélectionné — fais Cmd+C'); } }
+$('#btnCopyTT').onclick = () => { const c = cur(); if (c) copyTxt(pubText(c)); };
+$('#btnCopyIG').onclick = () => { const c = cur(); if (!c) return; copyTxt(pubText(c, 5)); if (c.tagsOn.length > 5) toast('Copié ✓ — Instagram limite à 5 hashtags : seuls les 5 premiers sélectionnés sont gardés', 5000); };
+
+/* transcription cliquable */
+function renderTranscript() {
+  const box = $('#tr'); box.innerHTML = ''; const frag = document.createDocumentFragment(); let lastTs = -999;
+  S.words.forEach((w, i) => {
+    if (w.s - lastTs > 30) { const t = document.createElement('span'); t.className = 'ts'; t.textContent = '[' + fmt(w.s) + ']'; frag.appendChild(t); lastTs = w.s; }
+    const sp = document.createElement('span'); sp.textContent = w.w + ' '; sp.dataset.i = i; frag.appendChild(sp);
+  });
+  box.appendChild(frag); highlightTranscript();
+}
+$('#tr').addEventListener('click', e => {
+  const i = e.target.dataset && e.target.dataset.i; if (i == null || !cur()) return;
+  const w = S.words[+i]; if (e.shiftKey) setBounds(cur().start, w.e + 0.25); else setBounds(w.s - 0.1, Math.max(cur().end, w.s + 3));
+});
+function highlightTranscript() {
+  const c = cur(); let first = null;
+  for (const sp of $('#tr').querySelectorAll('span[data-i]')) { const w = S.words[+sp.dataset.i]; const on = c && w.e > c.start + 0.05 && w.s < c.end - 0.05; sp.classList.toggle('in', !!on); if (on && !first) first = sp; }
+  if (first) { const box = $('#tr'); box.scrollTop = first.offsetTop - box.offsetTop - 30; }
+}
+
+/* ============ dessin (aperçu ET rendu final, identiques) ============ */
+function buildPages(ws) {
+  const pages = []; let cur = [];
+  for (let i = 0; i < ws.length; i++) {
+    const w = ws[i]; cur.push(w);
+    const gap = i + 1 < ws.length ? ws[i + 1].s - w.e : 9;
+    const chars = cur.reduce((a, x) => a + x.w.length + 1, 0);
+    if (cur.length >= 6 || chars > 30 || /[.?!…]$/.test(w.w) || gap > 0.7 || (/,$/.test(w.w) && cur.length >= 3)) { pages.push(cur); cur = []; }
+  }
+  if (cur.length) pages.push(cur);
+  return pages.map((p, k) => { const nx = pages[k + 1]; const s = p[0].s; let e = p[p.length - 1].e; if (nx && nx[0].s - e < 0.6) e = nx[0].s; else e += 0.25; return { ws: p, s, e }; });
+}
+function wrapWords(ctx, words, maxW) {
+  const lines = []; let line = [], lw = 0; const sp = ctx.measureText(' ').width;
+  for (const w of words) { const ww = ctx.measureText(w).width; if (line.length && lw + sp + ww > maxW) { lines.push(line); line = []; lw = 0; } line.push(w); lw += (line.length > 1 ? sp : 0) + ww; }
+  if (line.length) lines.push(line); return lines;
+}
+function drawFrame(ctx, W, H, v, c, t, pages, gv) {
+  ctx.save(); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const split = c.gp && c.gp !== 'none'; const Ht = split ? Math.round(H * (c.gpR || 0.58)) : H;
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, Ht); ctx.clip(); drawVideoIn(ctx, W, Ht, v, c); ctx.restore();
+  if (split) drawGameplay(ctx, 0, Ht, W, H - Ht, c, t, gv);
+  // ---- titre ----
+  if (c.title) {
+    const fs = Math.round(W * 0.054);
+    ctx.font = `700 ${fs}px "TikTok Sans", Inter, "Segoe UI", Arial, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    const lines = wrapWords(ctx, c.title.split(/\s+/), W * 0.84).map(l => l.join(' '));
+    const lh = fs * 1.22; let y = H * c.ty - (lines.length - 1) * lh / 2;
+    for (const l of lines) {
+      ctx.lineWidth = Math.max(3, fs * 0.16); ctx.strokeStyle = '#000'; ctx.strokeText(l, W / 2, y);
+      ctx.fillStyle = '#fff'; ctx.fillText(l, W / 2, y); y += lh;
+    }
+  }
+  // ---- sous-titres animés ----
+  const pg = pages.find(p => t >= p.s && t < p.e);
+  if (pg) {
+    const fs = Math.round(W * 0.066);
+    ctx.font = `900 ${fs}px Montserrat, "Arial Black", Inter, sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    const up = pg.ws.map(w => w.w.toUpperCase());
+    const lines = wrapWords(ctx, up, W * 0.8);
+    const pop = Math.min(1, (t - pg.s) / 0.12); const sc = 0.82 + 0.18 * (1 - Math.pow(1 - pop, 3));
+    const lh = fs * 1.18; const cy = H * c.sy; const sp = ctx.measureText(' ').width * 1.25;
+    let activeIdx = -1; pg.ws.forEach((w, i) => { if (t >= w.s - 0.02) activeIdx = i; });
+    ctx.save(); ctx.translate(W / 2, cy); ctx.scale(sc, sc);
+    let idx = 0; let y = -(lines.length - 1) * lh / 2;
+    for (const line of lines) {
+      const widths = line.map(w => ctx.measureText(w).width); const tw = widths.reduce((a, b) => a + b, 0) + sp * (line.length - 1);
+      let x = -tw / 2;
+      line.forEach((w, k) => {
+        const on = idx === activeIdx;
+        ctx.save(); const cx = x + widths[k] / 2; ctx.translate(cx, y); if (on) ctx.scale(1.04, 1.04);
+        ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = fs * 0.18; ctx.shadowOffsetY = fs * 0.05;
+        ctx.lineWidth = fs * 0.2; ctx.strokeStyle = '#000'; ctx.strokeText(w, -widths[k] / 2, 0);
+        ctx.shadowColor = 'transparent'; ctx.fillStyle = on ? STYLE.yellow : '#fff'; ctx.fillText(w, -widths[k] / 2, 0);
+        ctx.restore(); x += widths[k] + sp; idx++;
+      });
+      y += lh;
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawVideoIn(ctx, W, H, v, c) {
+  const vw = v.videoWidth || S.vw, vh = v.videoHeight || S.vh;
+  if (!(v.readyState >= 2 && vw)) return;
+  if (c.mode === 'fit') {
+    const cs = Math.max(W / vw, H / vh); ctx.filter = `blur(${Math.round(W / 22)}px) brightness(0.55)`;
+    ctx.drawImage(v, (W - vw * cs) / 2, (H - vh * cs) / 2, vw * cs, vh * cs); ctx.filter = 'none';
+    const s = Math.min(W / vw, H / vh) * c.zoom; const dw = vw * s, dh = vh * s;
+    ctx.drawImage(v, (W - dw) / 2 + (c.x - 0.5) * (W - dw), (H - dh) * c.y, dw, dh);
+  } else {
+    const s = Math.max(W / vw, H / vh) * c.zoom; const dw = vw * s, dh = vh * s;
+    ctx.drawImage(v, (W - dw) * c.x, (H - dh) * c.y, dw, dh);
+  }
+}
+
+/* ============ gameplay (écran partagé) ============ */
+const fract = x => x - Math.floor(x);
+const hsh = (i, s) => fract(Math.sin(i * 127.1 + s * 311.7) * 43758.5453);
+const smooth = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+const strHash = str => { let h = 7; for (const ch of String(str)) h = (h * 31 + ch.charCodeAt(0)) % 100003; return h / 100003; };
+const gpPV = document.createElement('video'), gpRV = document.createElement('video');
+[gpPV, gpRV].forEach(v => { v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; });
+function gpDefaults(gp) { return gp && gp !== 'none' ? { gp, gpR: 0.58, ty: 0.12, sy: 0.58 } : { gp: 'none', gpR: 0.58 }; }
+function gpOffsetUpload(c, v) { const d = v.duration || 0; return d > 2 ? strHash(c.id) * Math.max(0, d - 1) : 0; }
+function gpTimeFor(c, t, v) { const d = v.duration || 0; if (d <= 0) return 0; return (gpOffsetUpload(c, v) + Math.max(0, t - c.start)) % d; }
+function drawGameplay(ctx, x0, y0, w, h, c, t, gv) {
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip(); ctx.translate(x0, y0);
+  const tl = Math.max(0, t - c.start) + 2 + strHash(c.id) * 60;
+  try {
+    if (c.gp === 'upload') {
+      if (gv && gv.readyState >= 2 && gv.videoWidth) { const s = Math.max(w / gv.videoWidth, h / gv.videoHeight); const dw = gv.videoWidth * s, dh = gv.videoHeight * s; ctx.drawImage(gv, (w - dw) / 2, (h - dh) / 2, dw, dh); }
+      else { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#888'; ctx.font = `700 ${Math.round(w * 0.04)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(S.gpURL ? 'Chargement du gameplay…' : 'Importe ta vidéo de gameplay 📁', w / 2, h / 2); }
+    } else if (c.gp === 'dash') gameDash(ctx, w, h, tl);
+    else if (c.gp === 'tunnel') gameTunnel(ctx, w, h, tl);
+    else gameRunner(ctx, w, h, tl);
+  } catch (e) { console.error(e); }
+  ctx.restore();
+}
+/* --- Runner (jeu original) --- */
+function runnerLane(i) { for (let k = i; k > i - 60; k--) { if (hsh(k, 1) >= 0.35) { const bl = Math.floor(hsh(k, 2) * 3); return (bl + 1 + Math.floor(hsh(k, 3) * 2)) % 3; } } return 1; }
+function gameRunner(ctx, w, h, t) {
+  const hor = h * 0.3, F = h * 0.8, Fx = w * 0.42, Z0 = 4.2, SP = 9, speed = 20, zp = t * speed;
+  const P = (X, Y, Z) => [w / 2 + Fx * X / Z, hor + F * (1.6 - Y) / Z];
+  let g = ctx.createLinearGradient(0, 0, 0, hor); g.addColorStop(0, '#1a0b3d'); g.addColorStop(1, '#ff5f8f'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, hor + 1);
+  ctx.fillStyle = '#ffd36e'; ctx.beginPath(); ctx.arc(w / 2, hor, h * 0.13, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = 'rgba(26,11,61,.55)'; for (let k = 0; k < 9; k++) { const bx = fract(k * 0.137 - t * 0.01) * w * 1.2 - w * 0.1, bh = h * (0.05 + hsh(k, 9) * 0.12); ctx.fillRect(bx, hor - bh, w * 0.07, bh); }
+  g = ctx.createLinearGradient(0, hor, 0, h); g.addColorStop(0, '#2a1a5e'); g.addColorStop(1, '#120a2a'); ctx.fillStyle = g; ctx.fillRect(0, hor, w, h - hor);
+  const road = [P(-2.3, 0, 1.2), P(2.3, 0, 1.2), P(2.3, 0, 200), P(-2.3, 0, 200)];
+  ctx.fillStyle = '#3b2f6b'; ctx.beginPath(); road.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.fill();
+  for (let k = 0; k < 40; k++) { const z1 = 1.2 + k * 4 - (zp % 8) / 2, z2 = z1 + 2; if (z1 < 1.2) continue; ctx.fillStyle = 'rgba(255,255,255,.05)'; const q = [P(-2.3, 0, z1), P(2.3, 0, z1), P(2.3, 0, z2), P(-2.3, 0, z2)]; ctx.beginPath(); q.forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.fill(); }
+  ctx.strokeStyle = 'rgba(0,240,255,.8)'; ctx.lineWidth = Math.max(2, w * 0.004);
+  for (const X of [-2.3, 2.3]) { const a = P(X, 0, 1.2), b = P(X, 0, 200); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; for (const X of [-0.75, 0.75]) for (let k = 0; k < 30; k++) { const z1 = 1.2 + k * 3 - (zp % 3); if (z1 < 1.2) continue; const a = P(X, 0, z1), b = P(X, 0, z1 + 1.2); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); }
+  const laneX = l => (l - 1) * 1.5;
+  const i0 = Math.floor(zp / SP), seg = (zp - i0 * SP) / SP;
+  const lx = laneX(runnerLane(i0)) + (laneX(runnerLane(i0 + 1)) - laneX(runnerLane(i0))) * smooth(seg / 0.35);
+  let jump = 0; for (const i of [i0, i0 + 1]) { if (hsh(i, 1) < 0.35) { const d = i * SP - zp; if (d > -0.9 && d < 1.7) jump = Math.sin(Math.PI * (1.7 - d) / 2.6) * 1.3; } }
+  const objs = [];
+  for (let i = i0 - 1; i < i0 + 16; i++) {
+    if (i <= 0) continue; const Z = Z0 + i * SP - zp;
+    if (hsh(i, 1) < 0.35) objs.push({ Z, k: 'bar' }); else objs.push({ Z, k: 'blk', X: laneX(Math.floor(hsh(i, 2) * 3)), col: hsh(i, 7) });
+    for (const dz of [3.6, 5.1, 6.6]) objs.push({ Z: Z + dz, k: 'coin', X: laneX(runnerLane(i + 1)) });
+  }
+  const drawObj = o => {
+    if (o.Z < 0.9) return;
+    if (o.k === 'coin') { if (o.Z < Z0 + 0.3) return; const [x, y] = P(o.X, 0.7, o.Z); const r = F * 0.28 / o.Z; ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.ellipse(x, y, r * Math.abs(Math.cos(t * 5 + o.Z)) + r * 0.15, r, 0, 0, Math.PI * 2); ctx.fill(); return; }
+    if (o.k === 'bar') { const a = P(-2.2, 0.55, o.Z), b = P(2.2, 0, o.Z); ctx.fillStyle = '#ff3b5c'; ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); ctx.fillStyle = '#fff'; const st = (b[0] - a[0]) / 8; for (let k = 0; k < 8; k += 2) ctx.fillRect(a[0] + k * st, a[1], st, (b[1] - a[1]) * 0.4); return; }
+    const a = P(o.X - 0.6, 1.6, o.Z), b = P(o.X + 0.6, 0, o.Z), a2 = P(o.X - 0.6, 1.6, o.Z + 1.2), b2 = P(o.X + 0.6, 1.6, o.Z + 1.2);
+    ctx.fillStyle = `hsl(${Math.round(o.col * 360)},70%,38%)`; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(a2[0], a2[1]); ctx.lineTo(b2[0], b2[1]); ctx.lineTo(b[0], a[1]); ctx.fill();
+    ctx.fillStyle = `hsl(${Math.round(o.col * 360)},80%,55%)`; ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(a[0] + (b[0] - a[0]) * 0.1, a[1] + (b[1] - a[1]) * 0.1, (b[0] - a[0]) * 0.8, (b[1] - a[1]) * 0.12);
+  };
+  objs.sort((p, q) => q.Z - p.Z);
+  objs.filter(o => o.Z > Z0).forEach(drawObj);
+  const s = F / Z0, [px, py] = P(lx, jump, Z0); const run = Math.sin(t * 14);
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; const sh = P(lx, 0, Z0); ctx.beginPath(); ctx.ellipse(sh[0], sh[1], s * 0.32 * (1 - jump * 0.2), s * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#1b1b3a'; ctx.lineCap = 'round'; ctx.lineWidth = s * 0.12;
+  ctx.beginPath(); ctx.moveTo(px - s * 0.08, py - s * 0.45); ctx.lineTo(px - s * 0.12 + run * s * 0.15, py); ctx.moveTo(px + s * 0.08, py - s * 0.45); ctx.lineTo(px + s * 0.12 - run * s * 0.15, py); ctx.stroke();
+  ctx.fillStyle = '#00e0ff'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - s * 0.22, py - s * 1.05, s * 0.44, s * 0.62, s * 0.12) : ctx.rect(px - s * 0.22, py - s * 1.05, s * 0.44, s * 0.62); ctx.fill();
+  ctx.fillStyle = '#ffd2a6'; ctx.beginPath(); ctx.arc(px, py - s * 1.22, s * 0.18, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ff3b5c'; ctx.fillRect(px - s * 0.2, py - s * 1.38, s * 0.4, s * 0.1);
+  objs.filter(o => o.Z <= Z0).forEach(drawObj);
+  ctx.fillStyle = '#fff'; ctx.font = `900 ${Math.round(h * 0.06)}px Montserrat, Inter, sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.textBaseline = 'bottom'; ctx.font = `900 ${Math.round(h * 0.05)}px Montserrat, Inter, sans-serif`;
+  ctx.fillText(String(Math.floor(zp * 7)).padStart(6, '0'), w - w * 0.04, h * 0.96); ctx.textAlign = 'left'; ctx.fillStyle = '#ffd700'; ctx.fillText('● ' + Math.floor(zp / 3), w * 0.04, h * 0.96);
+}
+/* --- Parkour néon (jeu original) --- */
+function dashY(xp) {
+  for (let i = Math.floor(xp / 4.5) - 1; i <= Math.floor(xp / 4.5) + 1; i++) {
+    if (i < 1) continue; const wd = hsh(i, 5) > 0.7 ? 2 : 1; const cxs = i * 4.5 + hsh(i, 4) * 1.5 + wd / 2;
+    const p = (xp - (cxs - 1.7)) / 3.4; if (p >= 0 && p <= 1) return { y: 4 * p * (1 - p) * 2.1, rot: smooth(p) * Math.PI };
+  }
+  return { y: 0, rot: 0 };
+}
+function gameDash(ctx, w, h, t) {
+  const u = h * 0.1, gy = h * 0.76, cx = w * 0.3, speed = 7, xp = t * speed, hue = (t * 25) % 360;
+  let g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, `hsl(${hue},70%,22%)`); g.addColorStop(1, `hsl(${(hue + 60) % 360},70%,10%)`); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = `hsla(${(hue + 180) % 360},90%,65%,.18)`; ctx.lineWidth = 2;
+  for (let k = 0; k < 14; k++) { const sz = u * (1 + hsh(k, 11) * 2.5); const x = fract(hsh(k, 12) - xp * 0.012 * (0.5 + hsh(k, 13))) * (w + sz * 2) - sz; ctx.strokeRect(x, h * 0.08 + hsh(k, 14) * h * 0.5, sz, sz); }
+  ctx.fillStyle = `hsl(${(hue + 200) % 360},60%,14%)`; ctx.fillRect(0, gy, w, h - gy);
+  ctx.strokeStyle = `hsl(${(hue + 180) % 360},100%,65%)`; ctx.lineWidth = Math.max(2, h * 0.008); ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.08)'; for (let k = -1; k < w / u + 2; k++) { const x = k * u - (xp * u) % u; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x, h); ctx.stroke(); }
+  ctx.shadowBlur = u * 0.4; ctx.shadowColor = '#fff';
+  for (let i = Math.floor(xp / 4.5) - 2; i < Math.floor(xp / 4.5) + 10; i++) {
+    if (i < 1) continue; const wd = hsh(i, 5) > 0.7 ? 2 : 1; const x0 = cx + (i * 4.5 + hsh(i, 4) * 1.5 - xp) * u;
+    for (let k = 0; k < wd; k++) { const x = x0 + k * u; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + u / 2, gy - u * 0.95); ctx.lineTo(x + u, gy); ctx.fill(); }
+  }
+  for (let k = 7; k >= 1; k--) { const d = dashY(xp - k * 0.25); ctx.fillStyle = `hsla(${(hue + 180) % 360},100%,60%,${0.35 * (1 - k / 8)})`; const sz = u * (0.8 - k * 0.06); ctx.fillRect(cx - k * 0.25 * u + (u - sz) / 2, gy - d.y * u - u + (u - sz) / 2, sz, sz); }
+  const d = dashY(xp); ctx.save(); ctx.translate(cx + u / 2, gy - d.y * u - u / 2); ctx.rotate(d.rot);
+  ctx.shadowColor = '#ffe100'; ctx.shadowBlur = u * 0.6; ctx.fillStyle = '#ffe100'; ctx.fillRect(-u / 2, -u / 2, u, u);
+  ctx.shadowBlur = 0; ctx.fillStyle = '#ff2fb0'; ctx.fillRect(-u * 0.3, -u * 0.3, u * 0.6, u * 0.6); ctx.fillStyle = '#111'; ctx.fillRect(-u * 0.18, -u * 0.12, u * 0.12, u * 0.12); ctx.fillRect(u * 0.06, -u * 0.12, u * 0.12, u * 0.12);
+  ctx.restore(); ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = `900 ${Math.round(h * 0.055)}px Montserrat, Inter, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.textBaseline = 'bottom'; ctx.fillText(Math.min(100, Math.floor((xp % 400) / 4)) + ' %', w / 2, h * 0.96);
+}
+/* --- Tunnel néon (jeu original) --- */
+function gameTunnel(ctx, w, h, t) {
+  const cx = w / 2, cy = h / 2, F = Math.min(w, h) * 0.32, R = 3, SP = 6, zc = t * 13;
+  ctx.fillStyle = '#05010f'; ctx.fillRect(0, 0, w, h);
+  for (let k = 0; k < 70; k++) { const a = hsh(k, 8) * Math.PI * 2; const d = ((hsh(k, 9) * 60 - zc * 1.4) % 60 + 60) % 60 + 0.4; const r = F * 7 / d; ctx.fillStyle = `rgba(255,255,255,${Math.min(1, 3 / d)})`; ctx.fillRect(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 2 + 6 / d, 2 + 6 / d); }
+  const gap = i => hsh(i, 6) * Math.PI * 2 + t * 0.5 * (i % 2 ? 1 : -1);
+  const i0 = Math.ceil(zc / SP);
+  for (let i = i0 + 14; i >= i0; i--) {
+    const d = i * SP - zc; if (d < 0.6) continue; const rs = F * R / d; const gp = gap(i), half = 0.55;
+    ctx.strokeStyle = `hsl(${(i * 47) % 360},100%,60%)`; ctx.lineWidth = Math.max(2, rs * 0.14); ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = Math.min(30, rs * 0.25);
+    ctx.globalAlpha = Math.min(1, 6 / d + 0.15); ctx.beginPath(); ctx.arc(cx, cy, rs, gp + half, gp - half + Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  const zs = zc + 2.4, ip = Math.floor(zs / SP), fr = (zs - ip * SP) / SP;
+  let a0 = gap(ip), a1 = gap(ip + 1); let da = ((a1 - a0) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+  const a = a0 + da * smooth((fr - 0.15) / 0.7); const rr = F * R * 0.85 / 2.4;
+  ctx.save(); ctx.translate(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); ctx.rotate(a + Math.PI / 2);
+  const s = F * 0.22; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = s; ctx.fillStyle = '#00f0ff';
+  ctx.beginPath(); ctx.moveTo(0, -s); ctx.lineTo(s * 0.7, s * 0.6); ctx.lineTo(0, s * 0.25); ctx.lineTo(-s * 0.7, s * 0.6); ctx.fill(); ctx.restore(); ctx.shadowBlur = 0;
+}
+
+/* ============ aperçu ============ */
+const pvC = $('#pv'), pvX = pvC.getContext('2d'), pvV = $('#pvVid');
+let pvRAF = 0, pvPages = [], pvPagesFor = '';
+function pagesFor(c) { const k = c.id + '|' + c.start + '|' + c.end + '|' + S.words.length; if (k !== pvPagesFor) { pvPages = buildPages(clipWords(c)); pvPagesFor = k; } return pvPages; }
+function drawPreview() {
+  const c = cur(); if (!c) { pvX.fillStyle = '#000'; pvX.fillRect(0, 0, pvC.width, pvC.height); return; }
+  pvPagesFor = ''; drawFrame(pvX, pvC.width, pvC.height, pvV, c, pvV.currentTime, pagesFor(c), gpPV);
+  if (c.gp === 'upload' && S.gpURL && pvV.paused && gpPV.readyState >= 1) { const gt = gpTimeFor(c, pvV.currentTime, gpPV); if (Math.abs(gpPV.currentTime - gt) > 0.25) { gpPV.currentTime = gt; gpPV.onseeked = () => { gpPV.onseeked = null; drawFrame(pvX, pvC.width, pvC.height, pvV, c, pvV.currentTime, pagesFor(c), gpPV); }; } }
+  const rel = (pvV.currentTime - c.start) / (c.end - c.start); $('#scrub').value = Math.round(Math.max(0, Math.min(1, rel)) * 1000); $('#tlab').textContent = (pvV.currentTime - c.start).toFixed(1) + 's / ' + (c.end - c.start).toFixed(1) + 's';
+}
+function seekPreview(t) { pvV.currentTime = t; pvV.onseeked = () => { pvV.onseeked = null; drawPreview(); }; }
+function loopPreview() {
+  const c = cur(); if (!c) return;
+  if (pvV.currentTime >= c.end) { pvV.currentTime = c.start; }
+  drawFrame(pvX, pvC.width, pvC.height, pvV, c, pvV.currentTime, pagesFor(c), gpPV);
+  const rel = (pvV.currentTime - c.start) / (c.end - c.start); $('#scrub').value = Math.round(rel * 1000); $('#tlab').textContent = (pvV.currentTime - c.start).toFixed(1) + 's / ' + (c.end - c.start).toFixed(1) + 's';
+  pvRAF = requestAnimationFrame(loopPreview);
+}
+function stopPreview() { cancelAnimationFrame(pvRAF); pvV.pause(); gpPV.pause(); $('#btnPlay').textContent = '▶︎ Lire'; }
+$('#btnPlay').onclick = async () => {
+  const c = cur(); if (!c) return;
+  if (!pvV.paused) { stopPreview(); return; }
+  if (pvV.currentTime < c.start || pvV.currentTime >= c.end - 0.05) pvV.currentTime = c.start;
+  try { await pvV.play(); } catch (e) { toast('Lecture bloquée : ' + e.message); return; }
+  if (c.gp === 'upload' && S.gpURL) { try { gpPV.currentTime = gpTimeFor(c, pvV.currentTime, gpPV); gpPV.play(); } catch (e) { } }
+  $('#btnPlay').textContent = '⏸ Pause'; loopPreview();
+};
+$('#scrub').addEventListener('input', () => { const c = cur(); if (!c) return; const t = c.start + (c.end - c.start) * $('#scrub').value / 1000; pvV.currentTime = t; if (pvV.paused) pvV.onseeked = () => { pvV.onseeked = null; drawPreview(); }; });
+pvC.onclick = () => $('#btnPlay').click();
+
+/* ============ couverture ============ */
+function seekEl(v, t) { return new Promise(r => { if (Math.abs(v.currentTime - t) < 0.01 && v.readyState >= 2) return r(); const on = () => { v.removeEventListener('seeked', on); r(); }; v.addEventListener('seeked', on); v.currentTime = t; }); }
+function coverText(c) { return (c.covTitle && c.covTitle.trim()) || c.title || ''; }
+function drawCover(ctx, W, H, v, c) {
+  ctx.save(); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const vw = v.videoWidth || S.vw, vh = v.videoHeight || S.vh;
+  if (v.readyState >= 2 && vw) { const s = Math.max(W / vw, H / vh) * c.zoom; const dw = vw * s, dh = vh * s; ctx.drawImage(v, (W - dw) * c.x, (H - dh) * c.y, dw, dh); }
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(.5, 'rgba(0,0,0,.35)'); g.addColorStop(1, 'rgba(0,0,0,.6)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const txt = coverText(c).trim(); if (!txt) { ctx.restore(); return; }
+  const words = txt.split(/\s+/); const fam = '"TikTok Sans", Montserrat, "Arial Black", Inter, sans-serif';
+  const maxW = W * 0.88, maxH = H * 0.72; let fs = Math.round(W * 0.2), lines;
+  for (; fs > W * 0.05; fs -= Math.max(2, Math.round(fs * 0.04))) {
+    ctx.font = `900 ${fs}px ${fam}`; lines = wrapWords(ctx, words, maxW);
+    const tooWide = lines.some(l => ctx.measureText(l.join(' ')).width > maxW);
+    if (!tooWide && lines.length * fs * 1.12 <= maxH) break;
+  }
+  ctx.font = `900 ${fs}px ${fam}`;
+  { const n = lines.length; let bw = maxW; for (let w2 = maxW * 0.97; w2 > W * 0.4; w2 *= 0.97) { const l2 = wrapWords(ctx, words, w2); if (l2.length > n || l2.some(l => ctx.measureText(l.join(' ')).width > maxW)) break; bw = w2; } lines = wrapWords(ctx, words, bw); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  const lh = fs * 1.12; let y = H / 2 - (lines.length - 1) * lh / 2; const sp = ctx.measureText(' ').width;
+  for (const line of lines) {
+    const ws = line.map(w => ctx.measureText(w).width); const tw = ws.reduce((a, b) => a + b, 0) + sp * (line.length - 1); let x = (W - tw) / 2;
+    line.forEach((w, k) => {
+      const hot = /\p{Lu}{3,}/u.test(w) && w === w.toUpperCase();
+      ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = fs * 0.25; ctx.shadowOffsetY = fs * 0.06;
+      const emo = /\p{Extended_Pictographic}/u.test(w) && !/[\p{L}\p{N}]/u.test(w);
+      if (!emo) { ctx.lineWidth = fs * 0.16; ctx.strokeStyle = '#000'; ctx.strokeText(w, x, y); }
+      ctx.shadowColor = 'transparent'; ctx.fillStyle = hot ? STYLE.yellow : '#fff'; ctx.fillText(w, x, y);
+      x += ws[k] + sp;
+    });
+    y += lh;
+  }
+  ctx.restore();
+}
+let covBusy = Promise.resolve(); let covT;
+function covTime(c) { return c.start + (c.end - c.start) * (c.covPos == null ? 0.3 : c.covPos); }
+async function coverCanvas(c, W = 1080, H = 1920) {
+  const v = $('#cvVid'); await seekEl(v, covTime(c));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; drawCover(cv.getContext('2d'), W, H, v, c); return cv;
+}
+function refreshCover() {
+  clearTimeout(covT);
+  covT = setTimeout(() => { covBusy = covBusy.then(async () => { const c = cur(); if (!c) return; const v = $('#cvVid'); await seekEl(v, covTime(c)); const k = $('#cov'); drawCover(k.getContext('2d'), k.width, k.height, v, c); }).catch(() => { }); }, 120);
+}
+async function coverBlob(c) { const cv = await coverCanvas(c); return await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92)); }
+$('#cCovPos').addEventListener('input', () => { const c = cur(); if (!c) return; c.covPos = +$('#cCovPos').value; saveProject(); refreshCover(); if ($('#optCovFirst').checked) invalidate(c); });
+$('#cCovT').addEventListener('input', () => { const c = cur(); if (!c) return; c.covTitle = $('#cCovT').value; saveProject(); refreshCover(); if ($('#optCovFirst').checked) invalidate(c); });
+$('#btnCovDl').onclick = async () => { const c = cur(); if (!c) return; const b = await coverBlob(c); saveFile(safeName(c, S.sel) + '_couverture.jpg', b); };
+$('#optCovFirst').addEventListener('change', () => { for (const c of S.clips) invalidate(c); renderClipList(); toast('Les clips devront être re-rendus'); });
+
+/* ============ rendu MP4 (avec le son) ============ */
+let actx = null, rvSrc = null, rvDest = null;
+function pickMime() {
+  const c = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4d0028,mp4a.40.2', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  for (const m of c) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+let rendering = false;
+async function renderClip(c, onp) {
+  const W = 1080, H = 1920, FPS = 30;
+  const rv = $('#rvVid');
+  if (!actx) { actx = new AudioContext(); rvSrc = actx.createMediaElementSource(rv); rvDest = actx.createMediaStreamDestination(); rvSrc.connect(rvDest); }
+  if (actx.state === 'suspended') await actx.resume();
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx = cv.getContext('2d');
+  const pages = buildPages(clipWords(c));
+  rv.pause(); rv.currentTime = c.start; await new Promise(r => { rv.onseeked = () => { rv.onseeked = null; r(); }; });
+  const useGp = c.gp === 'upload' && S.gpURL;
+  if (useGp) { if (gpRV.src !== S.gpURL) gpRV.src = S.gpURL; await new Promise(r => { if (gpRV.readyState >= 1) r(); else gpRV.onloadedmetadata = () => r(); }); await new Promise(r => { gpRV.onseeked = () => { gpRV.onseeked = null; r(); }; gpRV.currentTime = gpTimeFor(c, c.start, gpRV); }); }
+  drawFrame(cx, W, H, rv, c, c.start, pages, gpRV);
+  const vs = cv.captureStream(FPS);
+  const stream = new MediaStream([...vs.getVideoTracks(), ...rvDest.stream.getAudioTracks()]);
+  const mime = pickMime(); if (!mime) throw new Error('Ce navigateur ne sait pas enregistrer de vidéo (essaie Chrome).');
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 192_000 });
+  const chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  const done = new Promise(r => rec.onstop = r);
+  rv.muted = false; rv.volume = 1;
+  if ($('#optCovFirst').checked) {
+    const cc = await coverCanvas(c); cx.drawImage(cc, 0, 0); rec.start(500);
+    const t0 = performance.now(); while (performance.now() - t0 < 300) { cx.drawImage(cc, 0, 0); await sleep(33); }
+    await rv.play();
+  } else { await rv.play(); rec.start(500); }
+  if (useGp) gpRV.play().catch(() => { });
+  await new Promise(resolve => {
+    const step = () => {
+      const t = rv.currentTime;
+      drawFrame(cx, W, H, rv, c, t, pages, gpRV);
+      onp && onp((t - c.start) / (c.end - c.start));
+      if (t >= c.end || rv.ended) { resolve(); return; }
+      if (rv.requestVideoFrameCallback) { let fired = false; rv.requestVideoFrameCallback(() => { if (!fired) { fired = true; step(); } }); setTimeout(() => { if (!fired) { fired = true; step(); } }, 60); }
+      else requestAnimationFrame(step);
+    };
+    step();
+  });
+  rv.pause(); gpRV.pause(); rec.stop(); await done; vs.getTracks().forEach(t => t.stop());
+  const type = mime.split(';')[0];
+  return { blob: new Blob(chunks, { type }), ext: type.includes('mp4') ? 'mp4' : 'webm' };
+}
+function safeName(c, i) { return String(i + 1).padStart(2, '0') + '_' + (c.title || 'clip').replace(/[^\p{L}\p{N} ]/gu, '').trim().replace(/\s+/g, '_').slice(0, 40); }
+async function doRender(i) {
+  const c = S.clips[i]; stopPreview();
+  const r = await renderClip(c, p => { if (S.sel === i) $('#rstat').textContent = 'rendu… ' + Math.round(p * 100) + ' %'; });
+  invalidate(c); rendered[c.id] = { ...r, url: URL.createObjectURL(r.blob), name: safeName(c, i) + '.' + r.ext };
+  if (S.sel === i) { $('#btnDl').disabled = false; $('#rstat').textContent = `rendu prêt (${(r.blob.size / 1e6).toFixed(1)} Mo, ${r.ext.toUpperCase()})`; }
+  renderClipList();
+}
+function lockUI(on) { rendering = on; for (const id of ['#btnRender', '#btnRenderAll', '#btnZip', '#btnPlay']) $(id).disabled = on; }
+$('#btnRender').onclick = async () => { if (rendering || S.sel < 0) return; lockUI(true); try { await doRender(S.sel); toast('Clip rendu ✓'); } catch (e) { console.error(e); toast('Erreur de rendu : ' + e.message, 6000); } lockUI(false); renderClipList(); };
+$('#btnRenderAll').onclick = async () => {
+  if (rendering) return; lockUI(true);
+  try {
+    for (let i = 0; i < S.clips.length; i++) { if (rendered[S.clips[i].id]) continue; selectClip(i); $('#rstat').textContent = 'rendu…'; await doRender(i); }
+    toast('Tous les clips sont rendus ✓');
+  } catch (e) { console.error(e); toast('Erreur de rendu : ' + e.message, 6000); }
+  lockUI(false); renderClipList();
+};
+async function saveFile(name, data) {
+  if (!capDl) { // hors claude.ai : téléchargement classique
+    const a = document.createElement('a'); a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data])); a.download = name; document.body.appendChild(a); a.click(); a.remove(); return;
+  }
+  try { await capDl.save({ filename: name, data }); }
+  catch (e) { if (e.code !== 'declined') toast('Téléchargement impossible : ' + (e.code || e.message), 6000); }
+}
+$('#btnDl').onclick = () => { const c = cur(); const r = c && rendered[c.id]; if (r) saveFile(r.name, r.blob); };
+$('#btnExportProj').onclick = () => saveFile((S.name || 'projet').replace(/\.[^.]+$/, '') + '_clipforge.json', JSON.stringify(projJSON()));
+$('#btnImportProj').onclick = () => $('#projFile').click();
+$('#projFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const p = JSON.parse(await f.text()); if (!p.words || !p.clips) throw 0; await resumeProject(p); } catch (_) { toast('Fichier projet invalide'); }
+};
+
+/* ZIP (sans compression) de tous les rendus */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(files) {
+  const enc = new TextEncoder(); const parts = []; const central = []; let off = 0;
+  for (const f of files) {
+    const data = new Uint8Array(await f.blob.arrayBuffer()); const name = enc.encode(f.name); const crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    parts.push(h.buffer, name, data);
+    const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    central.push(ch.buffer, name); off += 30 + name.length + data.length;
+  }
+  const cs = central.reduce((a, b) => a + b.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22)); end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cs, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, end.buffer], { type: 'application/zip' });
+}
+$('#btnZip').onclick = async () => {
+  if (!S.clips.length) return; toast('Préparation des couvertures…');
+  const files = []; for (let i = 0; i < S.clips.length; i++) { const c = S.clips[i]; const r = rendered[c.id]; if (r) files.push(r); try { files.push({ name: safeName(c, i) + '_couverture.jpg', blob: await coverBlob(c) }); } catch (e) { } }
+  const txt = S.clips.map((c, i) => `#${i + 1} ${c.title}\n\nTikTok :\n${pubText(c)}\n\nInstagram (5 hashtags max) :\n${pubText(c, 5)}\n`).join('\n-----------------\n\n');
+  files.push({ name: 'titres_et_legendes.txt', blob: new Blob([txt]) });
+  toast('Préparation du zip…'); const z = await makeZip(files); saveFile((S.name || 'clips').replace(/\.[^.]+$/, '') + '_clips.zip', z);
+};
+
+document.addEventListener('visibilitychange', () => { if (document.hidden && rendering) toast('⚠️ Reviens sur cet onglet : le rendu ralentit quand il est caché.', 8000); });
+document.fonts && document.fonts.load('900 64px Montserrat').then(() => drawPreview()).catch(() => { });
+listSaved(); updateCapsUI();
+window.__S = S; window.__getRendered = () => rendered; // debug
+</script>
+</body>
+</html>
