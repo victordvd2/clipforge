@@ -181,6 +181,32 @@ app.post('/api/claude', async (req, res) => {
 });
 
 /* ---------- site ---------- */
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d', setHeaders: (res, p) => { if (p.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
+// Fonctionne que les fichiers soient rangés dans public/ (vendor/, models/…) ou tous à plat à la racine du dépôt.
+const PUBLIC = path.join(__dirname, 'public');
+const PRIVATE = new Set(['server.js', 'package.json', 'package-lock.json', 'dockerfile', 'readme.md', '.env', '.env.example', '.gitignore', '.dockerignore']);
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+function findFile(urlPath) {
+  let rel; try { rel = decodeURIComponent(urlPath.split('?')[0]); } catch { return null; }
+  if (rel === '/' || rel === '') rel = '/index.html';
+  rel = path.posix.normalize(rel).replace(/^(\.\.\/|\/)+/, '');
+  const base = path.posix.basename(rel);
+  if (PRIVATE.has(base.toLowerCase()) || base.startsWith('.')) return null;
+  const cands = [path.join(PUBLIC, rel), path.join(__dirname, rel), path.join(__dirname, base)];
+  for (const c of cands) {
+    if (!c.startsWith(__dirname)) continue;
+    try { if (fs.statSync(c).isFile()) return c; } catch { }
+  }
+  return null;
+}
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'introuvable' });
+  const f = findFile(req.path);
+  if (!f) return res.status(404).send('Fichier introuvable : ' + req.path);
+  const ext = path.extname(f).toLowerCase();
+  res.setHeader('Content-Type', TYPES[ext] || 'application/octet-stream');
+  res.setHeader('Cache-Control', ext === '.html' ? 'no-cache' : 'public, max-age=604800');
+  res.setHeader('Content-Length', fs.statSync(f).size);
+  fs.createReadStream(f).pipe(res);
+});
 
 app.listen(PORT, () => console.log(`ClipForge en ligne sur le port ${PORT} — Claude ${ANTHROPIC_KEY ? 'activé' : 'désactivé'}`));
